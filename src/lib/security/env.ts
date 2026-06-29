@@ -9,7 +9,7 @@ type SupabasePublicEnv = Pick<
   "supabasePublishableKey" | "supabaseUrl"
 >;
 
-type SupabaseAdminEnv = PublicEnv & {
+type SupabaseAdminEnv = SupabasePublicEnv & {
   supabaseServiceRoleKey: string;
 };
 
@@ -58,7 +58,7 @@ export function getSupabasePublicEnv(): SupabasePublicEnv {
 
 export function getSupabaseAdminEnv(): SupabaseAdminEnv {
   return {
-    ...getPublicEnv(),
+    ...getSupabasePublicEnv(),
     supabaseServiceRoleKey: readEnv("SUPABASE_SERVICE_ROLE_KEY"),
   };
 }
