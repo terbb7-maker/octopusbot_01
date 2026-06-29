@@ -102,17 +102,6 @@ export function PlanEditor({
           </Field>
         </div>
 
-        <Field label="Texto do botao">
-          <Input
-            value={plan.buttonLabel}
-            maxLength={40}
-            onChange={(event) =>
-              onChange({ ...plan, buttonLabel: event.target.value })
-            }
-            placeholder="Escolher plano"
-          />
-        </Field>
-
         <ButtonColorPicker
           value={plan.buttonColor}
           onChange={(buttonColor) =>

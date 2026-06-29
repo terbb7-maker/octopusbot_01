@@ -21,6 +21,7 @@ type DraftVersionRow = {
 
 export type SaveBasicFlowEditorInput = {
   initialConfig: FlowInitialConfig;
+  planMessage: string;
   plans: FlowPlan[];
   planDefaultDelivery: FlowPlanDefaultDelivery;
   planPriceVariation: FlowPlanPriceVariation;

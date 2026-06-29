@@ -26,6 +26,7 @@ export type PreviewStateValue = {
   messages: FlowMessagesConfig;
   orderBumps: FlowOrderBumps;
   planDefaultDelivery: FlowPlanDefaultDelivery;
+  planMessage: string;
   planPriceVariation: FlowPlanPriceVariation;
   plans: FlowPlan[];
   upsells: FlowUpsellSequence[];
@@ -43,6 +44,7 @@ type PreviewStateContextValue = PreviewStateValue & {
   setMessages: (messages: FlowMessagesConfig) => void;
   setOrderBumps: (orderBumps: FlowOrderBumps) => void;
   setPlanDefaultDelivery: (delivery: FlowPlanDefaultDelivery) => void;
+  setPlanMessage: (message: string) => void;
   setPlanPriceVariation: (variation: FlowPlanPriceVariation) => void;
   setPlans: (plans: FlowPlan[]) => void;
   setUpsells: (upsells: FlowUpsellSequence[]) => void;
@@ -66,6 +68,7 @@ export function PreviewStateProvider({
 }) {
   const [initialConfig, setInitialConfig] = useState(flow.initialConfig);
   const [plans, setPlans] = useState(flow.plans);
+  const [planMessage, setPlanMessage] = useState(flow.planMessage);
   const [deliveries, setDeliveries] = useState(flow.deliveries);
   const [orderBumps, setOrderBumps] = useState(flow.orderBumps);
   const [planDefaultDelivery, setPlanDefaultDelivery] = useState(
@@ -106,6 +109,13 @@ export function PreviewStateProvider({
   const updatePlanDefaultDelivery = useCallback(
     (delivery: FlowPlanDefaultDelivery) => {
       setPlanDefaultDelivery(delivery);
+      markDirty();
+    },
+    [markDirty],
+  );
+  const updatePlanMessage = useCallback(
+    (message: string) => {
+      setPlanMessage(message);
       markDirty();
     },
     [markDirty],
@@ -180,6 +190,7 @@ export function PreviewStateProvider({
         ...plan,
         image: plan.image ? stripSigned(plan.image) : null,
       })),
+      planMessage,
       planDefaultDelivery,
       planPriceVariation,
       deliveries: deliveries.map((delivery) => ({
@@ -235,6 +246,7 @@ export function PreviewStateProvider({
     messages,
     orderBumps,
     planDefaultDelivery,
+    planMessage,
     planPriceVariation,
     plans,
     upsells,
@@ -253,6 +265,7 @@ export function PreviewStateProvider({
       messages,
       orderBumps,
       planDefaultDelivery,
+      planMessage,
       planPriceVariation,
       plans,
       saveAll,
@@ -262,6 +275,7 @@ export function PreviewStateProvider({
       setMessages: updateMessages,
       setOrderBumps: updateOrderBumps,
       setPlanDefaultDelivery: updatePlanDefaultDelivery,
+      setPlanMessage: updatePlanMessage,
       setPlanPriceVariation: updatePlanPriceVariation,
       setPlans: updatePlans,
       setUpsells: updateUpsells,
@@ -279,6 +293,7 @@ export function PreviewStateProvider({
       messages,
       orderBumps,
       planDefaultDelivery,
+      planMessage,
       planPriceVariation,
       plans,
       saveAll,
@@ -288,6 +303,7 @@ export function PreviewStateProvider({
       updateMessages,
       updateOrderBumps,
       updatePlanDefaultDelivery,
+      updatePlanMessage,
       updatePlanPriceVariation,
       updatePlans,
       updateUpsells,

@@ -13,11 +13,26 @@ function money(cents: number) {
   }).format(cents / 100);
 }
 
-function plansKeyboard(plans: FlowPlan[]): TelegramInlineKeyboardMarkup | undefined {
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function formatPlanButton(plan: FlowPlan) {
+  const name = plan.name.trim() || "Plano";
+
+  return `${name} • ${money(plan.priceCents)}`;
+}
+
+export function renderPlanButtons(
+  plans: FlowPlan[],
+): TelegramInlineKeyboardMarkup | undefined {
   const buttons = plans.slice(0, 10).map((plan) => [
     {
       callback_data: `plan:${plan.id}`,
-      text: plan.buttonLabel || plan.name || "Escolher plano",
+      text: formatPlanButton(plan),
     },
   ]);
 
@@ -39,18 +54,12 @@ export class PlanExecutor {
   async sendPlans(config: RuntimeConfig, session: RuntimeSession) {
     const plans = this.activePlans(config);
     const text = plans.length
-      ? [
-        "<b>Planos disponiveis</b>",
-        "",
-        ...plans.map((plan, index) => {
-          return `${index + 1}. <b>${plan.name}</b> - ${money(plan.priceCents)}`;
-        }),
-      ].join("\n")
+      ? escapeHtml(config.graph.planMessage)
       : "Nenhum plano disponivel.";
 
     await sendTelegramMessage({
       chatId: Number(session.telegram_chat_external_id),
-      replyMarkup: plansKeyboard(plans),
+      replyMarkup: renderPlanButtons(plans),
       text,
       token: config.bot.token,
     });

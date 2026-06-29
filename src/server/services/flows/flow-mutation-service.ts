@@ -36,6 +36,7 @@ export async function createFlow(input: CreateFlowInput): Promise<FlowActionResu
 
   const graph = {
     mode: input.mode,
+    planMessage: "Escolha uma das opções abaixo:",
     nodes: [],
     edges: [],
   };

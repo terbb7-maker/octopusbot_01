@@ -22,6 +22,8 @@ import {
   alertDialogCancelClassName,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { uploadFlowPlanImageAction } from "@/server/actions/flows";
 import type { BasicFlowEditorData, FlowPlan } from "@/server/services/flows";
 
@@ -47,7 +49,7 @@ function createPlan(order: number): FlowPlan {
     active: true,
     billingType: "lifetime",
     buttonColor: "default",
-    buttonLabel: "Escolher plano",
+    buttonLabel: "Selecionar",
     buttonValue: "select_plan",
     color: buttonColorHex("default"),
     deliveryConfig: {},
@@ -74,9 +76,11 @@ function createPlan(order: number): FlowPlan {
 export function PlansSection({ flow }: PlansSectionProps) {
   const {
     planDefaultDelivery,
+    planMessage,
     planPriceVariation,
     plans,
     setPlanDefaultDelivery,
+    setPlanMessage,
     setPlanPriceVariation,
     setPlans,
   } = usePreviewState();
@@ -159,6 +163,24 @@ export function PlansSection({ flow }: PlansSectionProps) {
       </div>
 
       <div className="mt-6 grid gap-6">
+        <div className="rounded-lg border border-white/10 bg-black/20 p-5">
+          <div className="grid gap-2">
+            <Label htmlFor="plan-message">Mensagem dos Planos</Label>
+            <Textarea
+              id="plan-message"
+              value={planMessage}
+              maxLength={500}
+              rows={3}
+              onChange={(event) => setPlanMessage(event.target.value)}
+              placeholder="Escolha uma das opções abaixo:"
+            />
+            <p className="text-xs text-muted-foreground">
+              Essa mensagem aparece no Telegram imediatamente acima dos botões
+              individuais dos planos.
+            </p>
+          </div>
+        </div>
+
         <PlanList
           activePlanId={activePlan?.id ?? null}
           plans={plans}

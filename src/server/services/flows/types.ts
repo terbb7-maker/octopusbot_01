@@ -44,6 +44,7 @@ export type BasicFlowEditorData = {
   updatedAt: string;
   draftVersionId: string | null;
   initialConfig: FlowInitialConfig;
+  planMessage: string;
   plans: FlowPlan[];
   planDefaultDelivery: FlowPlanDefaultDelivery;
   planPriceVariation: FlowPlanPriceVariation;

@@ -40,6 +40,10 @@ function graphFromJson(value: Json): RuntimeGraph {
     messages: jsonRecord(graph.messages) as FlowMessagesConfig,
     orderBumps: jsonRecord(graph.orderBumps) as FlowOrderBumps,
     planDefaultDelivery: jsonRecord(graph.planDefaultDelivery) as FlowPlanDefaultDelivery,
+    planMessage:
+      typeof graph.planMessage === "string" && graph.planMessage.trim()
+        ? graph.planMessage
+        : "Escolha uma das opções abaixo:",
     plans: Array.isArray(graph.plans) ? (graph.plans as FlowPlan[]) : [],
     upsells: Array.isArray(graph.upsells)
       ? (graph.upsells as FlowUpsellSequence[])

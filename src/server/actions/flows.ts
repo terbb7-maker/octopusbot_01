@@ -248,6 +248,7 @@ const upsellsSchema = z.array(upsellSequenceSchema).max(5);
 const downsellsSchema = z.array(upsellSequenceSchema).max(20);
 const basicEditorPayloadSchema = z.object({
   initialConfig: initialConfigSchema,
+  planMessage: z.string().trim().min(1).max(500),
   plans: plansSchema,
   planDefaultDelivery: planDefaultDeliverySchema,
   planPriceVariation: planPriceVariationSchema,

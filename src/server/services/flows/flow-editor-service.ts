@@ -41,6 +41,7 @@ const flowMessageKinds = [
   "cancellation",
   "social_proof",
 ] as const satisfies FlowMessageKind[];
+const defaultPlanMessage = "Escolha uma das opções abaixo:";
 
 type FlowEditorRow = {
   id: string;
@@ -151,6 +152,14 @@ function readInitialConfig(graph: Json): FlowInitialConfig {
       value: typeof cta.value === "string" ? cta.value : "",
     },
   };
+}
+
+function readPlanMessage(graph: Json | undefined) {
+  const value = jsonRecord(graph).planMessage;
+
+  return typeof value === "string" && value.trim()
+    ? value
+    : defaultPlanMessage;
 }
 
 function readPlanImage(value: Json | undefined): FlowPlanImage | null {
@@ -415,7 +424,7 @@ function readPlans(graph: Json): FlowPlan[] {
         buttonLabel:
           typeof record.buttonLabel === "string"
             ? record.buttonLabel
-            : "Escolher plano",
+            : "Selecionar",
         buttonValue:
           typeof record.buttonValue === "string" ? record.buttonValue : "",
         color: typeof record.color === "string" ? record.color : "#a855f7",
@@ -815,6 +824,7 @@ export async function getBasicFlowEditorData(
     updatedAt: flow.updated_at,
     draftVersionId: version?.id ?? null,
     initialConfig,
+    planMessage: readPlanMessage(version?.graph_json),
     plans: planData.plans,
     planDefaultDelivery: planData.defaultDelivery,
     planPriceVariation: planData.priceVariation,

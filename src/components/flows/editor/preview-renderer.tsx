@@ -3,7 +3,6 @@
 import { memo } from "react";
 
 import {
-  firstPlanPreview,
   formatPreviewPrice,
   renderPreviewText,
 } from "@/components/flows/editor/preview-variable-provider";
@@ -44,32 +43,20 @@ export const PreviewRenderer = memo(function PreviewRenderer({
   phase,
   state,
 }: PreviewRendererProps) {
-  const plan = firstPlanPreview(state);
   const cta = state.initialConfig.cta;
   const ctaEnabled = Boolean(cta?.enabled);
 
   function renderPlans() {
     return state.plans.length ? (
       <MessageBubble>
-        <p className="font-semibold">Planos</p>
-        <div className="mt-2 space-y-2">
-          {state.plans.map((item) => (
-            <div key={item.id} className="rounded-lg border border-white/10 p-2">
-              {item.image ? <MediaRenderer media={item.image} /> : null}
-              <p className="font-semibold">{item.name}</p>
-              <p className="text-xs text-white/70">{item.description}</p>
-              <p className="text-sky-300">{formatPreviewPrice(item.priceCents)}</p>
-            </div>
-          ))}
-        </div>
+        <p className="whitespace-pre-wrap">
+          {renderPreviewText(state.planMessage, state)}
+        </p>
         <TelegramButtons
-          buttons={[
-            {
-              label: plan?.buttonLabel || "Escolher plano",
-              color: plan?.color,
-              onClick: () => onPhaseChange("pix"),
-            },
-          ]}
+          buttons={state.plans.map((item) => ({
+            label: `${item.name || "Plano"} • ${formatPreviewPrice(item.priceCents)}`,
+            onClick: () => onPhaseChange("pix"),
+          }))}
         />
       </MessageBubble>
     ) : null;

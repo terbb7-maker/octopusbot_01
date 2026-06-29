@@ -21,6 +21,7 @@ export type RuntimeGraph = {
   messages: FlowMessagesConfig | null;
   orderBumps: FlowOrderBumps | null;
   planDefaultDelivery: FlowPlanDefaultDelivery | null;
+  planMessage: string;
   plans: FlowPlan[];
   upsells: FlowUpsellSequence[];
 };
