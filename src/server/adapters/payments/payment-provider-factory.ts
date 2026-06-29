@@ -1,4 +1,5 @@
 import { SandboxPaymentProvider } from "@/server/adapters/payments/sandbox/sandbox-payment-provider";
+import { runtimeLog } from "@/server/services/workflow-runtime/runtime-logger";
 import type {
   PaymentProvider,
   RuntimeSupabase,
@@ -51,6 +52,12 @@ export async function createPaymentProvider(
   workspaceId: string,
 ): Promise<PaymentProvider> {
   const config = await getWorkspacePaymentGatewayConfig(supabase, workspaceId);
+
+  runtimeLog("Gateway utilizada", {
+    provider: config.provider,
+    sandboxResult: config.sandboxResult,
+    workspaceId,
+  });
 
   if (config.provider !== "sandbox") {
     throw new Error("Gateway de pagamento indisponivel.");

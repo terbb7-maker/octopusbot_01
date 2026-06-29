@@ -5,6 +5,7 @@ import type {
   RuntimeConfig,
   RuntimeSession,
 } from "@/server/services/workflow-runtime/types";
+import { runtimeLog } from "@/server/services/workflow-runtime/runtime-logger";
 
 function money(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -56,12 +57,30 @@ export class PlanExecutor {
     const text = plans.length
       ? escapeHtml(config.graph.planMessage)
       : "Nenhum plano disponivel.";
+    const callbacks = plans.map((plan) => ({
+      callbackData: `plan:${plan.id}`,
+      planId: plan.id,
+      planName: plan.name,
+    }));
+
+    runtimeLog("Renderizando botoes dos planos", {
+      callbacks,
+      flowId: config.flowId,
+      sessionId: session.id,
+      versionId: config.versionId,
+    });
 
     await sendTelegramMessage({
       chatId: Number(session.telegram_chat_external_id),
       replyMarkup: renderPlanButtons(plans),
       text,
       token: config.bot.token,
+    });
+
+    runtimeLog("Mensagem enviada", {
+      flowId: config.flowId,
+      plansCount: plans.length,
+      type: "plans",
     });
   }
 }

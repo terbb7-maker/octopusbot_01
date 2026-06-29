@@ -4,6 +4,10 @@ import { z } from "zod";
 import { getTelegramWebhookEnv } from "@/lib/security/env";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase/service-role";
 import { TelegramRuntime } from "@/server/services/workflow-runtime/telegram-runtime";
+import {
+  runtimeError,
+  runtimeLog,
+} from "@/server/services/workflow-runtime/runtime-logger";
 import type { Json } from "@/types/database";
 
 const paramsSchema = z.object({ botId: z.string().uuid() });
@@ -210,25 +214,45 @@ export async function POST(
   const callbackData = readTelegramCallbackData(payload);
   const callbackQueryId = readTelegramCallbackId(payload);
 
-  if ((messageText?.startsWith("/start") || callbackData) && chat) {
-    const runtime = new TelegramRuntime(admin);
-
-    await runtime.handleUpdate({
+  if (eventType === "callback_query") {
+    runtimeLog("Webhook recebeu callback", {
       botId: bot.id,
       callbackData,
       callbackQueryId,
-      lead: {
-        chatExternalId: chat.chatExternalId,
-        chatId: telegramChatId,
-        firstName: chat.firstName,
-        languageCode: chat.languageCode,
-        lastName: chat.lastName,
-        telegramUserExternalId: chat.telegramUserExternalId,
-        username: chat.username,
-      },
-      messageText,
+      chatExternalId: chat?.chatExternalId ?? null,
+      updateId,
       workspaceId: bot.workspace_id,
     });
+  }
+
+  if ((messageText?.startsWith("/start") || callbackData) && chat) {
+    const runtime = new TelegramRuntime(admin);
+
+    try {
+      await runtime.handleUpdate({
+        botId: bot.id,
+        callbackData,
+        callbackQueryId,
+        lead: {
+          chatExternalId: chat.chatExternalId,
+          chatId: telegramChatId,
+          firstName: chat.firstName,
+          languageCode: chat.languageCode,
+          lastName: chat.lastName,
+          telegramUserExternalId: chat.telegramUserExternalId,
+          username: chat.username,
+        },
+        messageText,
+        workspaceId: bot.workspace_id,
+      });
+    } catch (error) {
+      runtimeError("Erro encontrado no webhook runtime", error, {
+        botId: bot.id,
+        callbackData,
+        eventType,
+        updateId,
+      });
+    }
   }
 
   return NextResponse.json({ ok: true });

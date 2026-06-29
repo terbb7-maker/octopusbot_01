@@ -6,9 +6,14 @@ import type { TelegramInlineKeyboardMarkup } from "@/server/adapters/telegram/ty
 import { createPaymentProvider } from "@/server/adapters/payments/payment-provider-factory";
 import { CheckoutRuntime } from "@/server/services/workflow-runtime/checkout-runtime";
 import { MediaRenderer } from "@/server/services/workflow-runtime/media-renderer";
+import {
+  runtimeError,
+  runtimeLog,
+} from "@/server/services/workflow-runtime/runtime-logger";
 import type {
   RuntimeCheckout,
   RuntimeConfig,
+  PixPayment,
   RuntimeSession,
   RuntimeSupabase,
 } from "@/server/services/workflow-runtime/types";
@@ -43,19 +48,44 @@ export class PaymentRuntime {
     resolver: VariableResolver;
     session: RuntimeSession;
   }) {
+    let pix: PixPayment;
     const provider = await createPaymentProvider(
       this.supabase,
       input.config.workspaceId,
     );
-    const pix = await provider.createPix({
+
+    runtimeLog("Gateway utilizada", {
       checkoutId: input.checkout.id,
-      currency: "BRL",
-      flowId: input.config.flowId,
-      planId: input.checkout.plan_id,
-      sessionId: input.session.id,
-      totalCents: input.checkout.total_cents,
+      provider: input.checkout.provider,
       workspaceId: input.config.workspaceId,
     });
+
+    try {
+      pix = await provider.createPix({
+        checkoutId: input.checkout.id,
+        currency: "BRL",
+        flowId: input.config.flowId,
+        planId: input.checkout.plan_id,
+        sessionId: input.session.id,
+        totalCents: input.checkout.total_cents,
+        workspaceId: input.config.workspaceId,
+      });
+    } catch (error) {
+      runtimeError("Erro encontrado ao gerar PIX", error, {
+        checkoutId: input.checkout.id,
+        flowId: input.config.flowId,
+        planId: input.checkout.plan_id,
+      });
+      throw error;
+    }
+
+    runtimeLog("PIX gerado", {
+      checkoutId: input.checkout.id,
+      paymentId: pix.paymentId,
+      status: pix.status,
+      totalCents: input.checkout.total_cents,
+    });
+
     const checkout = await this.checkoutRuntime.markPaymentCreated(
       input.checkout,
       pix.paymentId,
@@ -101,6 +131,12 @@ export class PaymentRuntime {
       replyMarkup: paymentKeyboard(checkout.id),
       text,
       token: input.config.bot.token,
+    });
+
+    runtimeLog("Mensagem enviada", {
+      checkoutId: checkout.id,
+      paymentId: checkout.payment_id,
+      type: "pix_generated",
     });
 
     return {
