@@ -1,0 +1,11 @@
+create type public.flow_status as enum ('draft', 'active', 'paused', 'archived');
+create type public.flow_version_status as enum ('draft', 'published', 'deprecated', 'archived');
+create type public.flow_validation_status as enum ('pending', 'valid', 'invalid');
+create type public.flow_binding_status as enum ('active', 'paused', 'archived');
+create type public.flow_deployment_status as enum ('active', 'paused', 'retired');
+create type public.flow_deployment_strategy as enum ('single', 'ab_test', 'rollout');
+create type public.flow_session_status as enum ('active', 'completed', 'abandoned', 'failed', 'cancelled');
+create type public.flow_run_step_status as enum ('pending', 'running', 'completed', 'failed', 'skipped');
+create type public.flow_experiment_status as enum ('draft', 'running', 'paused', 'completed', 'cancelled');
+create type public.workspace_integration_status as enum ('active', 'disabled', 'revoked');
+create type public.flow_ai_profile_status as enum ('active', 'disabled', 'archived');

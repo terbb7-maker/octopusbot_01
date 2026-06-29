@@ -1,0 +1,247 @@
+"use client";
+
+import { memo } from "react";
+
+import {
+  firstPlanPreview,
+  formatPreviewPrice,
+  renderPreviewText,
+} from "@/components/flows/editor/preview-variable-provider";
+import { MediaRenderer } from "@/components/flows/editor/media-renderer";
+import { MessageBubble } from "@/components/flows/editor/message-bubble";
+import { TelegramButtons } from "@/components/flows/editor/telegram-buttons";
+import type { PreviewStateValue } from "@/components/flows/editor/preview-state";
+
+export type PreviewPhase =
+  | "initial"
+  | "plans"
+  | "pix"
+  | "approved"
+  | "delivery"
+  | "order-bump"
+  | "upsell"
+  | "downsell";
+
+type PreviewRendererProps = {
+  onPhaseChange: (phase: PreviewPhase) => void;
+  phase: PreviewPhase;
+  state: PreviewStateValue;
+};
+
+function initialMediaItems(state: PreviewStateValue) {
+  const media = state.initialConfig.media;
+
+  if (!media) return [];
+
+  if (media.type === "video") return media.video ? [media.video] : [];
+  if (media.type === "audio") return media.audio ? [media.audio] : [];
+
+  return media.images?.length ? media.images : media.image ? [media.image] : [];
+}
+
+export const PreviewRenderer = memo(function PreviewRenderer({
+  onPhaseChange,
+  phase,
+  state,
+}: PreviewRendererProps) {
+  const plan = firstPlanPreview(state);
+  const cta = state.initialConfig.cta;
+  const ctaEnabled = Boolean(cta?.enabled);
+
+  function renderPlans() {
+    return state.plans.length ? (
+      <MessageBubble>
+        <p className="font-semibold">Planos</p>
+        <div className="mt-2 space-y-2">
+          {state.plans.map((item) => (
+            <div key={item.id} className="rounded-lg border border-white/10 p-2">
+              {item.image ? <MediaRenderer media={item.image} /> : null}
+              <p className="font-semibold">{item.name}</p>
+              <p className="text-xs text-white/70">{item.description}</p>
+              <p className="text-sky-300">{formatPreviewPrice(item.priceCents)}</p>
+            </div>
+          ))}
+        </div>
+        <TelegramButtons
+          buttons={[
+            {
+              label: plan?.buttonLabel || "Escolher plano",
+              color: plan?.color,
+              onClick: () => onPhaseChange("pix"),
+            },
+          ]}
+        />
+      </MessageBubble>
+    ) : null;
+  }
+
+  if (phase === "pix") {
+    const template = state.messages.pix_generated;
+
+    return (
+      <>
+        <MessageBubble>
+          <p className="whitespace-pre-wrap">
+            {renderPreviewText(template.text || "Seu PIX foi gerado.", state)}
+          </p>
+          <div className="my-3 grid aspect-square place-items-center rounded-lg bg-white text-center text-xs font-bold text-black">
+            QR CODE PIX
+          </div>
+          <TelegramButtons
+            buttons={[
+              { label: "Copiar PIX" },
+              { label: "Verificar Pagamento", onClick: () => onPhaseChange("approved") },
+            ]}
+          />
+        </MessageBubble>
+      </>
+    );
+  }
+
+  if (phase === "plans") {
+    return (
+      <>
+        {ctaEnabled && cta?.action === "send_message" && cta.message ? (
+          <MessageBubble>
+            <p className="whitespace-pre-wrap">
+              {renderPreviewText(cta.message, state)}
+            </p>
+          </MessageBubble>
+        ) : null}
+        {renderPlans()}
+      </>
+    );
+  }
+
+  if (phase === "approved") {
+    const template = state.messages.payment_approved;
+
+    return (
+      <MessageBubble>
+        <p className="whitespace-pre-wrap">
+          {renderPreviewText(template.text || "Pagamento aprovado.", state)}
+        </p>
+        <TelegramButtons
+          buttons={[{ label: "Acessar", onClick: () => onPhaseChange("delivery") }]}
+        />
+      </MessageBubble>
+    );
+  }
+
+  if (phase === "delivery") {
+    const delivery = state.deliveries[0];
+
+    return (
+      <MessageBubble>
+        <p className="font-semibold">{delivery?.name || "Entrega"}</p>
+        <p className="whitespace-pre-wrap">
+          {renderPreviewText(delivery?.message || "Conteudo liberado.", state)}
+        </p>
+        {delivery?.file ? <MediaRenderer media={delivery.file} /> : null}
+        <TelegramButtons
+          buttons={[{ label: "Continuar", onClick: () => onPhaseChange("order-bump") }]}
+        />
+      </MessageBubble>
+    );
+  }
+
+  if (phase === "order-bump") {
+    const bump = state.orderBumps.global;
+
+    return (
+      <MessageBubble>
+        {bump.image ? <MediaRenderer media={bump.image} /> : null}
+        <p className="font-semibold">{bump.title || "Oferta adicional"}</p>
+        <p className="whitespace-pre-wrap">
+          {renderPreviewText(bump.message || "Adicione esta oferta ao pedido.", state)}
+        </p>
+        <p className="mt-2 font-semibold text-sky-300">
+          {formatPreviewPrice(bump.priceCents || 1990)}
+        </p>
+        <TelegramButtons
+          buttons={[
+            { label: bump.buttons[0]?.label || "Aceitar", onClick: () => onPhaseChange("upsell") },
+            { label: "Recusar", onClick: () => onPhaseChange("upsell") },
+          ]}
+        />
+      </MessageBubble>
+    );
+  }
+
+  if (phase === "upsell") {
+    return (
+      <>
+        {state.upsells.length ? state.upsells.map((upsell, index) => (
+          <MessageBubble key={upsell.id}>
+            {upsell.image ? <MediaRenderer media={upsell.image} /> : null}
+            <p className="text-xs text-sky-300">Upsell {index + 1}</p>
+            <p className="whitespace-pre-wrap">
+              {renderPreviewText(upsell.message || "Oferta especial para voce.", state)}
+            </p>
+            <TelegramButtons
+              buttons={[{ label: upsell.button.label || "Ver oferta" }]}
+            />
+          </MessageBubble>
+        )) : (
+          <MessageBubble>Nenhum upsell configurado.</MessageBubble>
+        )}
+        <MessageBubble from="user">
+          <button type="button" onClick={() => onPhaseChange("downsell")}>
+            Continuar
+          </button>
+        </MessageBubble>
+      </>
+    );
+  }
+
+  if (phase === "downsell") {
+    return (
+      <>
+        {state.downsells.length ? state.downsells.map((downsell, index) => (
+          <MessageBubble key={downsell.id}>
+            {downsell.image ? <MediaRenderer media={downsell.image} /> : null}
+            <p className="text-xs text-sky-300">Downsell {index + 1}</p>
+            <p className="whitespace-pre-wrap">
+              {renderPreviewText(downsell.message || "Oferta alternativa.", state)}
+            </p>
+            <TelegramButtons
+              buttons={[{ label: downsell.button.label || "Ver oferta" }]}
+            />
+          </MessageBubble>
+        )) : (
+          <MessageBubble>Nenhum downsell configurado.</MessageBubble>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <MessageBubble>
+        {initialMediaItems(state).map((media) =>
+          media ? <MediaRenderer key={media.path} media={media} /> : null,
+        )}
+        <p className="whitespace-pre-wrap">
+          {renderPreviewText(
+            state.initialConfig.message || "Mensagem inicial do fluxo.",
+            state,
+          )}
+        </p>
+        <TelegramButtons
+          buttons={
+            ctaEnabled
+              ? [
+                  {
+                    label: cta?.label || "Comecar Agora",
+                    onClick: () => onPhaseChange("plans"),
+                  },
+                ]
+              : []
+          }
+        />
+      </MessageBubble>
+
+      {ctaEnabled ? null : renderPlans()}
+    </>
+  );
+});
