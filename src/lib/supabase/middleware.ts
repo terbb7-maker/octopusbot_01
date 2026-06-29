@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 
-import { getPublicEnv } from "@/lib/security/env";
+import { getSupabasePublicEnv } from "@/lib/security/env";
 import type { Database } from "@/types/database";
 
 const authRoutes = new Set(["/login", "/register", "/reset-password"]);
@@ -26,7 +26,7 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const env = getPublicEnv();
+  const env = getSupabasePublicEnv();
 
   const supabase = createServerClient<Database>(
     env.supabaseUrl,

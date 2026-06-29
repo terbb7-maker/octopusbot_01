@@ -4,6 +4,11 @@ type PublicEnv = {
   supabasePublishableKey: string;
 };
 
+type SupabasePublicEnv = Pick<
+  PublicEnv,
+  "supabasePublishableKey" | "supabaseUrl"
+>;
+
 type SupabaseAdminEnv = PublicEnv & {
   supabaseServiceRoleKey: string;
 };
@@ -40,6 +45,12 @@ function readEnv(name: string) {
 export function getPublicEnv(): PublicEnv {
   return {
     appUrl: readEnv("NEXT_PUBLIC_APP_URL"),
+    ...getSupabasePublicEnv(),
+  };
+}
+
+export function getSupabasePublicEnv(): SupabasePublicEnv {
+  return {
     supabaseUrl: readEnv("NEXT_PUBLIC_SUPABASE_URL"),
     supabasePublishableKey: readEnv("NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"),
   };
