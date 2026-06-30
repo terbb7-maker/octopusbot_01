@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { ImagePlus, Plus } from "lucide-react";
+import { CreditCard, ImagePlus, Plus } from "lucide-react";
 
 import {
   ButtonColorPicker,
   buttonColorHex,
 } from "@/components/flows/editor/button-color-picker";
+import { CollapsibleCard } from "@/components/flows/editor/collapsible-card";
 import { DeliverySelector } from "@/components/flows/editor/delivery-selector";
 import { centsToInput, inputToCents } from "@/components/flows/editor/plan-formatters";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,25 @@ type ExclusivePlansEditorProps = {
   onChange: (plan: FlowPlan) => void;
   onRemove: (planId: string) => void;
 };
+
+function money(cents: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function deliveryLabel(plan: FlowPlan) {
+  const labels = {
+    custom_message: "Mensagem",
+    default: "Padrao",
+    link: "Link",
+    telegram_channel: "Canal",
+    telegram_group: "Grupo",
+  };
+
+  return labels[plan.deliveryType] ?? "Entrega";
+}
 
 export function ExclusivePlansEditor({
   destinations,
@@ -66,8 +86,21 @@ export function ExclusivePlansEditor({
         </Button>
       </div>
       <div className="grid gap-3">
-        {plans.map((plan) => (
-          <div key={plan.id} className="grid gap-3 rounded-md border border-white/10 p-3">
+        {plans.map((plan, index) => (
+          <CollapsibleCard
+            key={plan.id}
+            defaultOpen={index === 0}
+            icon={CreditCard}
+            storageKey={`exclusive-plan:${plan.id}`}
+            title={plan.name || "Plano exclusivo"}
+            summary={
+              <span className="flex flex-wrap gap-x-4 gap-y-1">
+                <span>{money(plan.priceCents)}</span>
+                <span>Entrega: {deliveryLabel(plan)}</span>
+                <span>Order Bump: {plan.useGlobalOrderBump ? "Global" : "Proprio"}</span>
+              </span>
+            }
+          >
             <div className="grid gap-3 md:grid-cols-3">
               <Field label="Nome">
                 <Input
@@ -175,7 +208,7 @@ export function ExclusivePlansEditor({
             >
               Remover plano exclusivo
             </Button>
-          </div>
+          </CollapsibleCard>
         ))}
       </div>
     </section>

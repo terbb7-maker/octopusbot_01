@@ -282,22 +282,6 @@ const upsellSequenceSchema = z.object({
   required: z.boolean().default(false),
   planId: z.string().max(80).optional(),
   exclusivePlans: z.array(flowPlanSchema).max(10).default([]),
-  deliveryType: z.enum([
-    "telegram_group",
-    "telegram_channel",
-    "link",
-    "custom_message",
-    "exclusive_plans",
-  ]).default("exclusive_plans"),
-  deliveryConfig: z.object({
-    telegramDestinationId: z.string().max(200).optional(),
-    telegramChatId: z.number().optional(),
-    telegramChatTitle: z.string().max(160).optional(),
-    telegramChatType: z.enum(["group", "supergroup", "channel"]).optional(),
-    linkUrl: z.string().max(500).optional(),
-    message: z.string().max(4000).optional(),
-  }).default({}),
-  deliveryId: z.string().max(80).optional(),
   orderBumpMode: z.enum(["global", "exclusive", "none"]).default("none"),
   orderBump: orderBumpOfferSchema.nullable().optional(),
 });

@@ -61,9 +61,6 @@ export class PaymentCompletionRuntime {
       ? input.config.graph.upsells.find((item) => item.id === input.checkout.upsell_id)
       : null;
     if (upsell) {
-      const exclusivePlan = upsell.exclusivePlans.find(
-        (item) => item.id === input.checkout.plan_id,
-      );
       const orderBumpOffer =
         upsell.orderBumpMode === "exclusive"
           ? upsell.orderBump
@@ -72,22 +69,10 @@ export class PaymentCompletionRuntime {
       await this.delivery.executeSequenceDelivery({
         config: input.config,
         deliveryConfig: {
-          linkUrl:
-            upsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryConfig.linkUrl
-              : upsell.deliveryConfig?.linkUrl,
-          message:
-            upsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryConfig.message
-              : upsell.deliveryConfig?.message,
-          telegramDestinationId:
-            upsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryConfig.telegramDestinationId
-              : upsell.deliveryConfig?.telegramDestinationId,
-          type:
-            upsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryType ?? "custom_message"
-              : upsell.deliveryType,
+          linkUrl: plan.deliveryConfig.linkUrl,
+          message: plan.deliveryConfig.message,
+          telegramDestinationId: plan.deliveryConfig.telegramDestinationId,
+          type: plan.deliveryType === "default" ? "custom_message" : plan.deliveryType,
         },
         resolver: input.resolver,
         session: input.session,
@@ -114,9 +99,6 @@ export class PaymentCompletionRuntime {
         )
       : null;
     if (downsell) {
-      const exclusivePlan = downsell.exclusivePlans.find(
-        (item) => item.id === input.checkout.plan_id,
-      );
       const orderBumpOffer =
         downsell.orderBumpMode === "exclusive"
           ? downsell.orderBump
@@ -125,22 +107,10 @@ export class PaymentCompletionRuntime {
       await this.delivery.executeSequenceDelivery({
         config: input.config,
         deliveryConfig: {
-          linkUrl:
-            downsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryConfig.linkUrl
-              : downsell.deliveryConfig?.linkUrl,
-          message:
-            downsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryConfig.message
-              : downsell.deliveryConfig?.message,
-          telegramDestinationId:
-            downsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryConfig.telegramDestinationId
-              : downsell.deliveryConfig?.telegramDestinationId,
-          type:
-            downsell.deliveryType === "exclusive_plans"
-              ? exclusivePlan?.deliveryType ?? "custom_message"
-              : downsell.deliveryType,
+          linkUrl: plan.deliveryConfig.linkUrl,
+          message: plan.deliveryConfig.message,
+          telegramDestinationId: plan.deliveryConfig.telegramDestinationId,
+          type: plan.deliveryType === "default" ? "custom_message" : plan.deliveryType,
         },
         resolver: input.resolver,
         session: input.session,

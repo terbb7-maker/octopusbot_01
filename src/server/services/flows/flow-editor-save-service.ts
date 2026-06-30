@@ -96,16 +96,6 @@ async function syncNormalizedUpsellData({
           : sequence.declineButton?.label ?? "❌ Não quero",
         delay_unit: sequence.delayUnit ?? "minutes",
         delay_value: sequence.delayValue ?? sequence.delayMinutes ?? 0,
-        delivery_chat_id: sequence.deliveryConfig.telegramChatId ?? null,
-        delivery_message:
-          sequence.deliveryType === "custom_message"
-            ? sequence.deliveryConfig.message || null
-            : null,
-        delivery_type: sequence.deliveryType,
-        delivery_url:
-          sequence.deliveryType === "link"
-            ? sequence.deliveryConfig.linkUrl || null
-            : null,
         flow_id: flowId,
         media_group: Boolean(sequence.media?.groupImages),
         media_type: sequence.media?.type ?? null,

@@ -38,9 +38,6 @@ function createUpsell(): FlowUpsellSequence {
     required: false,
     planId: "",
     exclusivePlans: [],
-    deliveryType: "exclusive_plans",
-    deliveryConfig: {},
-    deliveryId: "",
     orderBumpMode: "none",
     orderBump: null,
   };

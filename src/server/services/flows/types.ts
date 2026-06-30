@@ -288,9 +288,6 @@ export type FlowUpsellSequence = {
   required: boolean;
   planId?: string;
   exclusivePlans: FlowPlan[];
-  deliveryType: Exclude<FlowPlanDeliveryType, "default"> | "exclusive_plans";
-  deliveryConfig: FlowPlanDeliveryConfig;
-  deliveryId?: string;
   orderBumpMode: "global" | "exclusive" | "none";
   orderBump?: FlowOrderBumpOffer | null;
 };

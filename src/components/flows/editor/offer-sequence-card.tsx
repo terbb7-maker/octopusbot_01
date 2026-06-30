@@ -1,10 +1,10 @@
 "use client";
 
-import { Copy, Trash2 } from "lucide-react";
+import { Copy, ListTree, Trash2 } from "lucide-react";
 
 import { ButtonConfigField } from "@/components/flows/editor/button-config-field";
+import { CollapsibleCard } from "@/components/flows/editor/collapsible-card";
 import { DelayField } from "@/components/flows/editor/delay-field";
-import { DeliveryConfigField } from "@/components/flows/editor/delivery-config-field";
 import { ExclusivePlansEditor } from "@/components/flows/editor/exclusive-plans-editor";
 import { MediaUploader } from "@/components/flows/editor/media-uploader";
 import { OrderBumpOfferCard } from "@/components/flows/editor/order-bump-offer-card";
@@ -78,6 +78,12 @@ function createOrderBump(): FlowOrderBumpOffer {
   };
 }
 
+function orderBumpLabel(mode: FlowUpsellSequence["orderBumpMode"]) {
+  if (mode === "global") return "Global";
+  if (mode === "exclusive") return "Exclusivo";
+  return "Nenhum";
+}
+
 export function OfferSequenceCard({
   destinations,
   flowId,
@@ -88,6 +94,8 @@ export function OfferSequenceCard({
   sequence,
 }: OfferSequenceCardProps) {
   const exclusivePlans = sequence.exclusivePlans ?? [];
+  const delayValue = sequence.delayValue ?? sequence.delayMinutes ?? 0;
+  const delayUnit = sequence.delayUnit === "seconds" ? "segundos" : "minutos";
 
   function updateExclusivePlan(plan: FlowPlan) {
     onChange({
@@ -99,29 +107,43 @@ export function OfferSequenceCard({
   }
 
   return (
-    <article className="rounded-lg border border-white/10 bg-black/20 p-4">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-normal text-primary">
-            Sequencia {index + 1}
-          </p>
-          <h3 className="mt-1 text-base font-semibold text-foreground">
-            {sequence.message || "Upsell automatizado"}
-          </h3>
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" variant="outline" className="border-white/10" onClick={onDuplicate}>
+    <CollapsibleCard
+      defaultOpen={index === 0}
+      icon={ListTree}
+      storageKey={`flow-sequence:${sequence.id}`}
+      title={`Sequencia ${index + 1}`}
+      summary={
+        <span className="flex flex-wrap gap-x-4 gap-y-1">
+          <span>Delay: {delayValue} {delayUnit}</span>
+          <span>Planos: {exclusivePlans.length}</span>
+          <span>Order Bump: {orderBumpLabel(sequence.orderBumpMode)}</span>
+          <span>Obrigatorio: {sequence.required ? "Sim" : "Nao"}</span>
+        </span>
+      }
+      actions={
+        <>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-white/10"
+            onClick={onDuplicate}
+          >
             <Copy className="size-4" aria-hidden="true" />
           </Button>
-          <Button type="button" variant="outline" className="border-white/10 text-destructive" onClick={onRemove}>
+          <Button
+            type="button"
+            variant="outline"
+            className="border-white/10 text-destructive"
+            onClick={onRemove}
+          >
             <Trash2 className="size-4" aria-hidden="true" />
           </Button>
-        </div>
-      </div>
-
+        </>
+      }
+    >
       <div className="grid gap-5">
         <DelayField
-          value={sequence.delayValue ?? sequence.delayMinutes ?? 0}
+          value={delayValue}
           unit={sequence.delayUnit ?? "minutes"}
           onChange={(delay) =>
             onChange({
@@ -178,11 +200,7 @@ export function OfferSequenceCard({
             onChange={(button) =>
               onChange({
                 ...sequence,
-                button: {
-                  ...sequence.button,
-                  color: button.color,
-                  label: button.label,
-                },
+                button: { ...sequence.button, color: button.color, label: button.label },
               })
             }
           />
@@ -205,25 +223,6 @@ export function OfferSequenceCard({
           ) : null}
         </div>
 
-        <DeliveryConfigField
-          config={sequence.deliveryConfig ?? {}}
-          destinations={destinations}
-          title="Destino da entrega"
-          type={
-            sequence.deliveryType === "exclusive_plans"
-              ? "custom_message"
-              : sequence.deliveryType
-          }
-          onChange={(deliveryType, deliveryConfig) =>
-            onChange({
-              ...sequence,
-              deliveryConfig,
-              deliveryType:
-                deliveryType === "default" ? "exclusive_plans" : deliveryType,
-            })
-          }
-        />
-
         <ExclusivePlansEditor
           destinations={destinations}
           flowId={flowId}
@@ -231,7 +230,6 @@ export function OfferSequenceCard({
           onAdd={() =>
             onChange({
               ...sequence,
-              deliveryType: "exclusive_plans",
               exclusivePlans: [...exclusivePlans, createExclusivePlan()],
             })
           }
@@ -276,7 +274,7 @@ export function OfferSequenceCard({
           ) : null}
         </section>
       </div>
-    </article>
+    </CollapsibleCard>
   );
 }
 

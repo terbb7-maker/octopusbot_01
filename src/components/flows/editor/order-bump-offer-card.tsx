@@ -1,8 +1,9 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { Gift, Trash2 } from "lucide-react";
 
 import { ButtonConfigField } from "@/components/flows/editor/button-config-field";
+import { CollapsibleCard } from "@/components/flows/editor/collapsible-card";
 import { DeliveryConfigField } from "@/components/flows/editor/delivery-config-field";
 import { MediaUploader } from "@/components/flows/editor/media-uploader";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,25 @@ function inputToCents(value: string) {
   return Number.isFinite(parsed) ? Math.max(0, Math.round(parsed * 100)) : 0;
 }
 
+function money(cents: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    currency: "BRL",
+    style: "currency",
+  }).format(cents / 100);
+}
+
+function deliveryLabel(type: FlowOrderBumpOffer["deliveryType"]) {
+  const labels = {
+    custom_message: "Mensagem",
+    default: "Padrao",
+    link: "Link",
+    telegram_channel: "Canal",
+    telegram_group: "Grupo",
+  };
+
+  return labels[type] ?? "Padrao";
+}
+
 export function OrderBumpOfferCard({
   bumpId,
   destinations,
@@ -51,17 +71,21 @@ export function OrderBumpOfferCard({
   onRemove,
 }: OrderBumpOfferCardProps) {
   return (
-    <article className="rounded-lg border border-white/10 bg-black/20 p-4">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-normal text-primary">
-            {title}
-          </p>
-          <h3 className="mt-1 text-base font-semibold text-foreground">
-            {offer.title || "Oferta adicional"}
-          </h3>
-        </div>
-        {onRemove ? (
+    <CollapsibleCard
+      defaultOpen
+      icon={Gift}
+      storageKey={`order-bump:${bumpId}`}
+      title={title}
+      summary={
+        <span className="flex flex-wrap gap-x-4 gap-y-1">
+          <span>{offer.title || "Oferta adicional"}</span>
+          <span>{money(offer.priceCents)}</span>
+          <span>Entrega: {deliveryLabel(offer.deliveryType ?? "default")}</span>
+          <span>Botao: {offer.acceptButtonText || "✅ Quero aproveitar"}</span>
+        </span>
+      }
+      actions={
+        onRemove ? (
           <Button
             type="button"
             variant="outline"
@@ -70,9 +94,9 @@ export function OrderBumpOfferCard({
           >
             <Trash2 className="size-4" aria-hidden="true" />
           </Button>
-        ) : null}
-      </div>
-
+        ) : null
+      }
+    >
       <div className="grid gap-4">
         <label className="flex items-center gap-2 text-sm font-medium text-foreground">
           <input
@@ -186,7 +210,7 @@ export function OrderBumpOfferCard({
           }
         />
       </div>
-    </article>
+    </CollapsibleCard>
   );
 }
 

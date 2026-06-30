@@ -44,7 +44,6 @@ export type FlowPlanDeliveryType =
   | "link"
   | "custom_message";
 export type FlowOfferDelayUnit = "seconds" | "minutes";
-export type FlowOfferDeliveryType = Exclude<FlowPlanDeliveryType, "default"> | "exclusive_plans";
 export type FlowOfferButtonColor = "auto" | "blue" | "green" | "red";
 export type FlowOfferOrderBumpMode = "none" | "global" | "exclusive";
 
@@ -375,10 +374,6 @@ export type FlowUpsellSequencesTable = {
     decline_button_color: FlowOfferButtonColor;
     media_type: string | null;
     media_group: boolean;
-    delivery_type: FlowOfferDeliveryType;
-    delivery_chat_id: number | null;
-    delivery_url: string | null;
-    delivery_message: string | null;
     order_bump_mode: FlowOfferOrderBumpMode;
     created_at: string;
     updated_at: string;
@@ -399,10 +394,6 @@ export type FlowUpsellSequencesTable = {
     decline_button_color?: FlowOfferButtonColor;
     media_type?: string | null;
     media_group?: boolean;
-    delivery_type?: FlowOfferDeliveryType;
-    delivery_chat_id?: number | null;
-    delivery_url?: string | null;
-    delivery_message?: string | null;
     order_bump_mode?: FlowOfferOrderBumpMode;
   };
   Update: Partial<Omit<FlowUpsellSequencesTable["Insert"], "workspace_id" | "flow_id">>;

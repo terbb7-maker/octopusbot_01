@@ -425,14 +425,6 @@ function readOfferSequences(
         typeof record.delayValue === "number"
           ? Math.max(0, record.delayValue)
           : delayMinutes;
-      const deliveryType =
-        record.deliveryType === "telegram_group" ||
-        record.deliveryType === "telegram_channel" ||
-        record.deliveryType === "link" ||
-        record.deliveryType === "custom_message" ||
-        record.deliveryType === "exclusive_plans"
-          ? record.deliveryType
-          : "exclusive_plans";
       const exclusivePlans = Array.isArray(record.exclusivePlans)
         ? record.exclusivePlans
           .map((plan, index): FlowPlan | null => {
@@ -483,10 +475,6 @@ function readOfferSequences(
           typeof record.required === "boolean" ? record.required : false,
         planId: typeof record.planId === "string" ? record.planId : "",
         exclusivePlans,
-        deliveryType,
-        deliveryConfig: jsonRecord(record.deliveryConfig),
-        deliveryId:
-          typeof record.deliveryId === "string" ? record.deliveryId : "",
         orderBumpMode:
           record.orderBumpMode === "exclusive" ||
           record.orderBumpMode === "global"

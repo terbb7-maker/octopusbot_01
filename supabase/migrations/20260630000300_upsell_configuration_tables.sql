@@ -1,11 +1,4 @@
 create type public.flow_offer_delay_unit as enum ('seconds', 'minutes');
-create type public.flow_offer_delivery_type as enum (
-  'telegram_group',
-  'telegram_channel',
-  'link',
-  'custom_message',
-  'exclusive_plans'
-);
 create type public.flow_offer_button_color as enum (
   'auto',
   'blue',
@@ -34,10 +27,6 @@ create table public.flow_upsell_sequences (
   decline_button_color public.flow_offer_button_color not null default 'auto',
   media_type text,
   media_group boolean not null default false,
-  delivery_type public.flow_offer_delivery_type not null default 'exclusive_plans',
-  delivery_chat_id bigint,
-  delivery_url text,
-  delivery_message text,
   order_bump_mode public.flow_offer_order_bump_mode not null default 'none',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
