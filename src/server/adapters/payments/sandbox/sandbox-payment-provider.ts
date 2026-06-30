@@ -62,7 +62,9 @@ export class SandboxPaymentProvider implements PaymentProvider {
       .select("id")
       .single();
 
-    if (error || !payment) throw new Error("Nao foi possivel gerar o PIX.");
+    if (error || !payment) {
+      throw new Error(error?.message ?? "Nao foi possivel gerar o PIX.");
+    }
 
     const pix = this.pixGenerator.create({
       amountCents: input.totalCents,
@@ -85,7 +87,7 @@ export class SandboxPaymentProvider implements PaymentProvider {
       workspace_id: input.workspaceId,
     });
 
-    if (pixError) throw new Error("Nao foi possivel registrar o PIX.");
+    if (pixError) throw new Error(pixError.message);
 
     if (this.resultMode === "always_approve") {
       await this.webhookSimulator.approveAfterDelay({
