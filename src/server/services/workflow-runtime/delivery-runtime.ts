@@ -152,6 +152,24 @@ export class DeliveryRuntime {
     });
   }
 
+  async executeSequenceDelivery(input: {
+    config: RuntimeConfig;
+    deliveryConfig: DeliveryConfig;
+    resolver: VariableResolver;
+    session: RuntimeSession;
+    sequenceId: string;
+  }) {
+    await this.sendDelivery(
+      input.config,
+      input.session,
+      input.resolver,
+      input.deliveryConfig,
+    );
+    await this.events.log(input.session, "delivery_completed", {
+      sequenceId: input.sequenceId,
+    });
+  }
+
   private async sendDelivery(
     config: RuntimeConfig,
     session: RuntimeSession,

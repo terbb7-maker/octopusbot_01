@@ -30,8 +30,6 @@ function offerKeyboard(
           callback_data: `order_bump:accept:${checkoutId}`,
           text: offer.acceptButtonText || "✅ Quero aproveitar",
         },
-      ],
-      [
         {
           callback_data: `order_bump:decline:${checkoutId}`,
           text: offer.declineButtonText || "❌ Continuar sem bônus",

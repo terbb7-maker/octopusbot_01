@@ -43,6 +43,10 @@ export type FlowPlanDeliveryType =
   | "telegram_channel"
   | "link"
   | "custom_message";
+export type FlowOfferDelayUnit = "seconds" | "minutes";
+export type FlowOfferDeliveryType = Exclude<FlowPlanDeliveryType, "default"> | "exclusive_plans";
+export type FlowOfferButtonColor = "auto" | "blue" | "green" | "red";
+export type FlowOfferOrderBumpMode = "none" | "global" | "exclusive";
 
 export type FlowsTable = {
   Row: {
@@ -351,6 +355,109 @@ export type FlowPlanPriceVariationsTable = {
     cent_range_end?: number;
   };
   Update: Partial<Omit<FlowPlanPriceVariationsTable["Insert"], "workspace_id" | "flow_id">>;
+  Relationships: [];
+};
+
+export type FlowUpsellSequencesTable = {
+  Row: {
+    id: string;
+    workspace_id: string;
+    flow_id: string;
+    sequence_key: string;
+    order_index: number;
+    delay_value: number;
+    delay_unit: FlowOfferDelayUnit;
+    message: string;
+    required: boolean;
+    accept_button_text: string;
+    accept_button_color: FlowOfferButtonColor;
+    decline_button_text: string | null;
+    decline_button_color: FlowOfferButtonColor;
+    media_type: string | null;
+    media_group: boolean;
+    delivery_type: FlowOfferDeliveryType;
+    delivery_chat_id: number | null;
+    delivery_url: string | null;
+    delivery_message: string | null;
+    order_bump_mode: FlowOfferOrderBumpMode;
+    created_at: string;
+    updated_at: string;
+  };
+  Insert: {
+    id?: string;
+    workspace_id: string;
+    flow_id: string;
+    sequence_key: string;
+    order_index?: number;
+    delay_value?: number;
+    delay_unit?: FlowOfferDelayUnit;
+    message?: string;
+    required?: boolean;
+    accept_button_text?: string;
+    accept_button_color?: FlowOfferButtonColor;
+    decline_button_text?: string | null;
+    decline_button_color?: FlowOfferButtonColor;
+    media_type?: string | null;
+    media_group?: boolean;
+    delivery_type?: FlowOfferDeliveryType;
+    delivery_chat_id?: number | null;
+    delivery_url?: string | null;
+    delivery_message?: string | null;
+    order_bump_mode?: FlowOfferOrderBumpMode;
+  };
+  Update: Partial<Omit<FlowUpsellSequencesTable["Insert"], "workspace_id" | "flow_id">>;
+  Relationships: [];
+};
+
+export type FlowUpsellSequencePlansTable = {
+  Row: {
+    id: string;
+    workspace_id: string;
+    flow_id: string;
+    upsell_sequence_id: string;
+    flow_plan_id: string;
+    order_index: number;
+    created_at: string;
+  };
+  Insert: {
+    id?: string;
+    workspace_id: string;
+    flow_id: string;
+    upsell_sequence_id: string;
+    flow_plan_id: string;
+    order_index?: number;
+  };
+  Update: Partial<Omit<FlowUpsellSequencePlansTable["Insert"], "workspace_id" | "flow_id">>;
+  Relationships: [];
+};
+
+export type FlowUpsellSequenceMediaTable = {
+  Row: {
+    id: string;
+    workspace_id: string;
+    flow_id: string;
+    upsell_sequence_id: string;
+    media_kind: string;
+    file_name: string;
+    file_path: string;
+    file_type: string;
+    order_index: number;
+    grouped: boolean;
+    created_at: string;
+  };
+  Insert: {
+    id?: string;
+    workspace_id: string;
+    flow_id: string;
+    upsell_sequence_id: string;
+    media_kind: string;
+    file_name: string;
+    file_path: string;
+    file_type: string;
+    order_index?: number;
+    grouped?: boolean;
+  };
+  Update: Partial<Omit<FlowUpsellSequenceMediaTable["Insert"], "workspace_id" | "flow_id">>;
   Relationships: [];
 };
 

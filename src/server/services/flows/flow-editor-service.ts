@@ -298,6 +298,12 @@ function readUpsellButton(value: Json | undefined): FlowUpsellButton {
   return {
     label: typeof record.label === "string" ? record.label : "Ver plano",
     value: typeof record.value === "string" ? record.value : "view_upsell",
+    color:
+      record.color === "blue" ||
+      record.color === "green" ||
+      record.color === "red"
+        ? record.color
+        : "auto",
   };
 }
 
@@ -407,19 +413,86 @@ function readOfferSequences(
       const record = jsonRecord(sequence as Json);
 
       if (typeof record.id !== "string") return null;
+      const delayMinutes =
+        typeof record.delayMinutes === "number"
+          ? Math.max(0, record.delayMinutes)
+          : 0;
+      const delayUnit =
+        record.delayUnit === "seconds" || record.delay_unit === "seconds"
+          ? "seconds"
+          : "minutes";
+      const delayValue =
+        typeof record.delayValue === "number"
+          ? Math.max(0, record.delayValue)
+          : delayMinutes;
+      const deliveryType =
+        record.deliveryType === "telegram_group" ||
+        record.deliveryType === "telegram_channel" ||
+        record.deliveryType === "link" ||
+        record.deliveryType === "custom_message" ||
+        record.deliveryType === "exclusive_plans"
+          ? record.deliveryType
+          : "exclusive_plans";
+      const exclusivePlans = Array.isArray(record.exclusivePlans)
+        ? record.exclusivePlans
+          .map((plan, index): FlowPlan | null => {
+            const planRecord = jsonRecord(plan as Json);
+
+            if (typeof planRecord.id !== "string") return null;
+
+            return readPlans({
+              plans: [{ ...planRecord, active: false, order: index }],
+            } as Json)[0] ?? null;
+          })
+          .filter((plan): plan is FlowPlan => Boolean(plan))
+        : [];
+      const button = readUpsellButton(record.button);
+      const decline = jsonRecord(record.declineButton);
 
       return {
         id: record.id,
-        delayMinutes:
-          typeof record.delayMinutes === "number"
-            ? Math.max(0, record.delayMinutes)
-            : 0,
+        delayValue,
+        delayUnit,
+        delayMinutes: delayUnit === "seconds" ? delayValue / 60 : delayValue,
         message: typeof record.message === "string" ? record.message : "",
         image: readUpsellImage(record.image),
-        button: readUpsellButton(record.button),
+        media: record.media ? readInitialMedia(record.media) : undefined,
+        button: {
+          ...button,
+          color:
+            button.color === "blue" ||
+            button.color === "green" ||
+            button.color === "red"
+              ? button.color
+              : "auto",
+        },
+        declineButton: {
+          label:
+            typeof decline.label === "string" && decline.label.trim()
+              ? decline.label
+              : "❌ Não quero",
+          value: typeof decline.value === "string" ? decline.value : "decline_upsell",
+          color:
+            decline.color === "blue" ||
+            decline.color === "green" ||
+            decline.color === "red"
+              ? decline.color
+              : "auto",
+        },
+        required:
+          typeof record.required === "boolean" ? record.required : false,
         planId: typeof record.planId === "string" ? record.planId : "",
+        exclusivePlans,
+        deliveryType,
+        deliveryConfig: jsonRecord(record.deliveryConfig),
         deliveryId:
           typeof record.deliveryId === "string" ? record.deliveryId : "",
+        orderBumpMode:
+          record.orderBumpMode === "exclusive" ||
+          record.orderBumpMode === "global"
+            ? record.orderBumpMode
+            : "none",
+        orderBump: record.orderBump ? readOrderBumpOffer(record.orderBump) : null,
       };
     })
     .filter((sequence): sequence is FlowUpsellSequence => Boolean(sequence))
@@ -739,7 +812,25 @@ async function withSignedOfferSequenceImages<T extends FlowUpsellSequence>(
 ) {
   return Promise.all(
     sequences.map(async (sequence) => {
-      if (!sequence.image?.path) return sequence;
+      const mediaConfig = await withSignedMediaUrls(supabase, {
+        media: sequence.media,
+      });
+      const exclusivePlans = await withSignedPlanImages(
+        supabase,
+        sequence.exclusivePlans ?? [],
+      );
+      const orderBump = sequence.orderBump
+        ? await signOrderBumpOfferImage(supabase, sequence.orderBump)
+        : sequence.orderBump;
+
+      if (!sequence.image?.path) {
+        return {
+          ...sequence,
+          exclusivePlans,
+          media: mediaConfig.media,
+          orderBump,
+        };
+      }
 
       const { data } = await supabase.storage
         .from(FLOW_MEDIA_BUCKET)
@@ -747,6 +838,9 @@ async function withSignedOfferSequenceImages<T extends FlowUpsellSequence>(
 
       return {
         ...sequence,
+        exclusivePlans,
+        media: mediaConfig.media,
+        orderBump,
         image: {
           ...sequence.image,
           signedUrl: data?.signedUrl ?? null,
@@ -867,7 +961,7 @@ export async function getBasicFlowEditorData(
     draftVersionId: version?.id ?? null,
     initialConfig,
     planMessage: readPlanMessage(version?.graph_json),
-    plans: planData.plans,
+    plans: planData.plans.filter((plan) => plan.active !== false),
     planDefaultDelivery: planData.defaultDelivery,
     planPriceVariation: planData.priceVariation,
     deliveries,

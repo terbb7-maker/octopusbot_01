@@ -52,6 +52,22 @@ export class PlanExecutor {
     return this.activePlans(config).find((plan) => plan.id === planId) ?? null;
   }
 
+  findAnyPlan(config: RuntimeConfig, planId: string) {
+    const upsellPlans = config.graph.upsells.flatMap(
+      (sequence) => sequence.exclusivePlans ?? [],
+    );
+    const downsellPlans = config.graph.downsells.flatMap(
+      (sequence) => sequence.exclusivePlans ?? [],
+    );
+
+    return (
+      config.graph.plans.find((plan) => plan.id === planId)
+      ?? upsellPlans.find((plan) => plan.id === planId)
+      ?? downsellPlans.find((plan) => plan.id === planId)
+      ?? null
+    );
+  }
+
   async sendPlans(config: RuntimeConfig, session: RuntimeSession) {
     const plans = this.activePlans(config);
     const text = plans.length

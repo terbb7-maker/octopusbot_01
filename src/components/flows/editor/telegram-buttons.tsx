@@ -6,11 +6,20 @@ export type TelegramPreviewButton = {
   onClick?: () => void;
 };
 
-export function TelegramButtons({ buttons }: { buttons: TelegramPreviewButton[] }) {
+export function TelegramButtons({
+  buttons,
+  columns = 1,
+}: {
+  buttons: TelegramPreviewButton[];
+  columns?: 1 | 2;
+}) {
   if (!buttons.length) return null;
 
   return (
-    <div className="mt-2 grid gap-1">
+    <div
+      className="mt-2 grid gap-1"
+      style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+    >
       {buttons.map((button, index) => (
         <button
           key={`${button.label}-${index}`}

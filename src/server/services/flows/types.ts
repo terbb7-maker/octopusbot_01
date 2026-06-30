@@ -272,16 +272,27 @@ export type FlowUpsellImage = {
 export type FlowUpsellButton = {
   label: string;
   value: string;
+  color?: FlowButtonColor;
 };
 
 export type FlowUpsellSequence = {
   id: string;
+  delayValue: number;
+  delayUnit: "seconds" | "minutes";
   delayMinutes: number;
   message: string;
   image?: FlowUpsellImage | null;
+  media?: FlowEditorMedia;
   button: FlowUpsellButton;
+  declineButton?: FlowUpsellButton;
+  required: boolean;
   planId?: string;
+  exclusivePlans: FlowPlan[];
+  deliveryType: Exclude<FlowPlanDeliveryType, "default"> | "exclusive_plans";
+  deliveryConfig: FlowPlanDeliveryConfig;
   deliveryId?: string;
+  orderBumpMode: "global" | "exclusive" | "none";
+  orderBump?: FlowOrderBumpOffer | null;
 };
 
 export type FlowDownsellImage = FlowUpsellImage;

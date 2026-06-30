@@ -52,6 +52,16 @@ function offerMediaItems(state: PreviewStateValue) {
   return media.images?.length ? media.images : media.image ? [media.image] : [];
 }
 
+function sequenceMediaItems(sequence: PreviewStateValue["upsells"][number]) {
+  const media = sequence.media;
+
+  if (!media) return sequence.image ? [sequence.image] : [];
+  if (media.type === "video") return media.video ? [media.video] : [];
+  if (media.type === "audio") return media.audio ? [media.audio] : [];
+
+  return media.images?.length ? media.images : media.image ? [media.image] : [];
+}
+
 export const PreviewRenderer = memo(function PreviewRenderer({
   onPhaseChange,
   phase,
@@ -165,6 +175,7 @@ export const PreviewRenderer = memo(function PreviewRenderer({
           {formatPreviewPrice(bump.priceCents || 1990)}
         </p>
         <TelegramButtons
+          columns={2}
           buttons={[
             {
               color: flowButtonColorHex(bump.acceptButtonColor || "auto"),
@@ -187,13 +198,40 @@ export const PreviewRenderer = memo(function PreviewRenderer({
       <>
         {state.upsells.length ? state.upsells.map((upsell, index) => (
           <MessageBubble key={upsell.id}>
-            {upsell.image ? <MediaRenderer media={upsell.image} /> : null}
+            {sequenceMediaItems(upsell).map((media) =>
+              media ? <MediaRenderer key={media.path} media={media} /> : null,
+            )}
             <p className="text-xs text-sky-300">Upsell {index + 1}</p>
+            <p className="text-[10px] text-white/50">
+              Delay: {upsell.delayValue ?? upsell.delayMinutes ?? 0}{" "}
+              {upsell.delayUnit === "seconds" ? "segundos" : "minutos"}
+            </p>
             <p className="whitespace-pre-wrap">
               {renderPreviewText(upsell.message || "Oferta especial para voce.", state)}
             </p>
+            {upsell.exclusivePlans?.length ? (
+              <div className="mt-2 grid gap-1">
+                {upsell.exclusivePlans.map((plan) => (
+                  <div key={plan.id} className="rounded-md bg-white/10 px-3 py-2 text-xs">
+                    {plan.name} • {formatPreviewPrice(plan.priceCents)}
+                  </div>
+                ))}
+              </div>
+            ) : null}
             <TelegramButtons
-              buttons={[{ label: upsell.button.label || "Ver oferta" }]}
+              columns={upsell.required ? 1 : 2}
+              buttons={[
+                {
+                  color: flowButtonColorHex(upsell.button.color ?? "auto"),
+                  label: upsell.button.label || "✅ Quero aproveitar",
+                },
+                ...(!upsell.required
+                  ? [{
+                    color: flowButtonColorHex(upsell.declineButton?.color ?? "auto"),
+                    label: upsell.declineButton?.label || "❌ Não quero",
+                  }]
+                  : []),
+              ]}
             />
           </MessageBubble>
         )) : (

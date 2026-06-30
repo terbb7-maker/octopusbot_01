@@ -14,6 +14,8 @@ export class CheckoutRuntime {
     planId: string;
     session: RuntimeSession;
     subtotalCents: number;
+    upsellId?: string | null;
+    downsellId?: string | null;
   }) {
     const { config, session } = input;
     const gateway = await getWorkspacePaymentGatewayConfig(
@@ -28,6 +30,8 @@ export class CheckoutRuntime {
         flow_version_id: config.versionId,
         lead_id: session.lead_id,
         plan_id: input.planId,
+        upsell_id: input.upsellId ?? null,
+        downsell_id: input.downsellId ?? null,
         provider: gateway.provider,
         session_id: session.id,
         status: "draft",

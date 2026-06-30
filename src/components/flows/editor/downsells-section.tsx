@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { OfferSequenceCard } from "@/components/flows/editor/offer-sequence-card";
 import { usePreviewState } from "@/components/flows/editor/preview-state";
 import { Button } from "@/components/ui/button";
-import { uploadFlowDownsellImageAction } from "@/server/actions/flows";
 import type {
   BasicFlowEditorData,
   FlowDownsellSequence,
@@ -24,21 +22,35 @@ function createDownsell(): FlowDownsellSequence {
 
   return {
     id,
+    delayValue: 0,
+    delayUnit: "minutes",
     delayMinutes: 0,
     message: "",
     image: null,
+    media: { type: "image", groupImages: false, images: [] },
     button: {
+      color: "auto",
       label: "Ver oferta",
       value: "view_downsell",
     },
+    declineButton: {
+      color: "auto",
+      label: "❌ Não quero",
+      value: "decline_downsell",
+    },
+    required: false,
     planId: "",
+    exclusivePlans: [],
+    deliveryType: "exclusive_plans",
+    deliveryConfig: {},
     deliveryId: "",
+    orderBumpMode: "none",
+    orderBump: null,
   };
 }
 
 export function DownsellsSection({ flow }: DownsellsSectionProps) {
-  const { deliveries, downsells, plans, setDownsells } = usePreviewState();
-  const [uploadState, setUploadState] = useState("");
+  const { downsells, setDownsells } = usePreviewState();
 
   function updateDownsell(sequence: FlowDownsellSequence) {
     setDownsells(
@@ -46,28 +58,22 @@ export function DownsellsSection({ flow }: DownsellsSectionProps) {
     );
   }
 
-  async function uploadImage(downsellId: string, file: File) {
-    setUploadState("Enviando imagem...");
-    const formData = new FormData();
-    formData.set("downsellId", downsellId);
-    formData.set("file", file);
-    formData.set("flowId", flow.id);
+  function duplicateDownsell(sequence: FlowDownsellSequence) {
+    const copy = {
+      ...sequence,
+      id: crypto.randomUUID(),
+      exclusivePlans: sequence.exclusivePlans.map((plan) => ({
+        ...plan,
+        id: crypto.randomUUID(),
+      })),
+    };
+    const index = downsells.findIndex((item) => item.id === sequence.id);
 
-    const result = await uploadFlowDownsellImageAction(formData);
-
-    if (!result.ok || !("image" in result) || !result.image) {
-      setUploadState(result.message);
-      return;
-    }
-
-    setDownsells(
-      downsells.map((downsell) =>
-        downsell.id === downsellId
-          ? { ...downsell, image: result.image }
-          : downsell,
-      ),
-    );
-    setUploadState("Imagem pronta para salvar.");
+    setDownsells([
+      ...downsells.slice(0, index + 1),
+      copy,
+      ...downsells.slice(index + 1),
+    ]);
   }
 
   return (
@@ -101,17 +107,14 @@ export function DownsellsSection({ flow }: DownsellsSectionProps) {
             downsells.map((downsell, index) => (
               <OfferSequenceCard
                 key={downsell.id}
-                deliveries={deliveries}
-                emptyTitle="Downsell automatizado"
-                imageLabel="Adicionar imagem do downsell"
+                destinations={flow.telegramDeliveryDestinations}
+                flowId={flow.id}
                 index={index}
-                messagePlaceholder="Escreva a mensagem enviada nesta etapa de downsell."
                 onChange={updateDownsell}
-                onImageUpload={(file) => uploadImage(downsell.id, file)}
+                onDuplicate={() => duplicateDownsell(downsell)}
                 onRemove={() =>
                   setDownsells(downsells.filter((item) => item.id !== downsell.id))
                 }
-                plans={plans}
                 sequence={downsell}
               />
             ))
@@ -124,7 +127,7 @@ export function DownsellsSection({ flow }: DownsellsSectionProps) {
         </div>
 
         <div className="mt-5 border-t border-white/10 pt-4 text-xs text-muted-foreground">
-          {uploadState || "Edite os downsells e use Salvar tudo para persistir."}
+          Edite os downsells e use Salvar tudo para persistir.
         </div>
       </div>
     </div>

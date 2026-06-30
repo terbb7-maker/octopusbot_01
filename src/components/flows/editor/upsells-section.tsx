@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { OfferSequenceCard } from "@/components/flows/editor/offer-sequence-card";
 import { usePreviewState } from "@/components/flows/editor/preview-state";
 import { Button } from "@/components/ui/button";
-import { uploadFlowUpsellImageAction } from "@/server/actions/flows";
 import type { BasicFlowEditorData, FlowUpsellSequence } from "@/server/services/flows";
 
 type UpsellsSectionProps = {
@@ -21,46 +19,59 @@ function createUpsell(): FlowUpsellSequence {
 
   return {
     id,
+    delayValue: 0,
+    delayUnit: "minutes",
     delayMinutes: 0,
     message: "",
     image: null,
+    media: { type: "image", groupImages: false, images: [] },
     button: {
-      label: "Ver oferta",
+      color: "auto",
+      label: "✅ Quero aproveitar",
       value: "view_upsell",
     },
+    declineButton: {
+      color: "auto",
+      label: "❌ Não quero",
+      value: "decline_upsell",
+    },
+    required: false,
     planId: "",
+    exclusivePlans: [],
+    deliveryType: "exclusive_plans",
+    deliveryConfig: {},
     deliveryId: "",
+    orderBumpMode: "none",
+    orderBump: null,
   };
 }
 
 export function UpsellsSection({ flow }: UpsellsSectionProps) {
-  const { deliveries, plans, setUpsells, upsells } = usePreviewState();
-  const [uploadState, setUploadState] = useState("");
+  const { setUpsells, upsells } = usePreviewState();
 
   function updateUpsell(sequence: FlowUpsellSequence) {
     setUpsells(upsells.map((item) => (item.id === sequence.id ? sequence : item)));
   }
 
-  async function uploadImage(upsellId: string, file: File) {
-    setUploadState("Enviando imagem...");
-    const formData = new FormData();
-    formData.set("flowId", flow.id);
-    formData.set("upsellId", upsellId);
-    formData.set("file", file);
+  function duplicateUpsell(sequence: FlowUpsellSequence) {
+    const copy = {
+      ...sequence,
+      id: crypto.randomUUID(),
+      exclusivePlans: sequence.exclusivePlans.map((plan) => ({
+        ...plan,
+        id: crypto.randomUUID(),
+      })),
+      orderBump: sequence.orderBump
+        ? { ...sequence.orderBump }
+        : sequence.orderBump,
+    };
+    const index = upsells.findIndex((item) => item.id === sequence.id);
 
-    const result = await uploadFlowUpsellImageAction(formData);
-
-    if (!result.ok || !("image" in result) || !result.image) {
-      setUploadState(result.message);
-      return;
-    }
-
-    setUpsells(
-      upsells.map((upsell) =>
-        upsell.id === upsellId ? { ...upsell, image: result.image } : upsell,
-      ),
-    );
-    setUploadState("Imagem pronta para salvar.");
+    setUpsells([
+      ...upsells.slice(0, index + 1),
+      copy,
+      ...upsells.slice(index + 1),
+    ]);
   }
 
   return (
@@ -94,17 +105,14 @@ export function UpsellsSection({ flow }: UpsellsSectionProps) {
             upsells.map((upsell, index) => (
               <OfferSequenceCard
                 key={upsell.id}
-                deliveries={deliveries}
-                emptyTitle="Upsell automatizado"
-                imageLabel="Adicionar imagem do upsell"
+                destinations={flow.telegramDeliveryDestinations}
+                flowId={flow.id}
                 index={index}
-                messagePlaceholder="Escreva a mensagem enviada nesta etapa de upsell."
                 onChange={updateUpsell}
-                onImageUpload={(file) => uploadImage(upsell.id, file)}
+                onDuplicate={() => duplicateUpsell(upsell)}
                 onRemove={() =>
                   setUpsells(upsells.filter((item) => item.id !== upsell.id))
                 }
-                plans={plans}
                 sequence={upsell}
               />
             ))
@@ -117,7 +125,7 @@ export function UpsellsSection({ flow }: UpsellsSectionProps) {
         </div>
 
         <div className="mt-5 border-t border-white/10 pt-4 text-xs text-muted-foreground">
-          {uploadState || "Edite os upsells e use Salvar tudo para persistir."}
+          Edite os upsells e use Salvar tudo para persistir.
         </div>
       </div>
     </div>

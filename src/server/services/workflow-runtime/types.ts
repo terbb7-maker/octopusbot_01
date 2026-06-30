@@ -87,6 +87,7 @@ export type RuntimeEventType =
   | "upsell_shown"
   | "upsell_paid"
   | "downsell_sent"
+  | "downsell_paid"
   | "conversation_finished";
 
 export type PaymentStatus =

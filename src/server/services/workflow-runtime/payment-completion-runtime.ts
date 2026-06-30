@@ -36,7 +36,12 @@ export class PaymentCompletionRuntime {
     resolver: VariableResolver;
     session: RuntimeSession;
   }) {
-    const plan = this.plans.findPlan(input.config, input.checkout.plan_id);
+    const isOfferCheckout = Boolean(
+      input.checkout.upsell_id || input.checkout.downsell_id,
+    );
+    const plan = isOfferCheckout
+      ? this.plans.findAnyPlan(input.config, input.checkout.plan_id)
+      : this.plans.findPlan(input.config, input.checkout.plan_id);
     if (!plan) return;
 
     await this.checkout.markPaid(input.checkout);
@@ -51,6 +56,111 @@ export class PaymentCompletionRuntime {
     });
 
     await this.delivery.executePaymentApproved(input);
+
+    const upsell = input.checkout.upsell_id
+      ? input.config.graph.upsells.find((item) => item.id === input.checkout.upsell_id)
+      : null;
+    if (upsell) {
+      const exclusivePlan = upsell.exclusivePlans.find(
+        (item) => item.id === input.checkout.plan_id,
+      );
+      const orderBumpOffer =
+        upsell.orderBumpMode === "exclusive"
+          ? upsell.orderBump
+          : this.orderBump.findOffer(input.config, plan);
+
+      await this.delivery.executeSequenceDelivery({
+        config: input.config,
+        deliveryConfig: {
+          linkUrl:
+            upsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryConfig.linkUrl
+              : upsell.deliveryConfig?.linkUrl,
+          message:
+            upsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryConfig.message
+              : upsell.deliveryConfig?.message,
+          telegramDestinationId:
+            upsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryConfig.telegramDestinationId
+              : upsell.deliveryConfig?.telegramDestinationId,
+          type:
+            upsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryType ?? "custom_message"
+              : upsell.deliveryType,
+        },
+        resolver: input.resolver,
+        session: input.session,
+        sequenceId: upsell.id,
+      });
+      if (input.checkout.order_bump_id) {
+        await this.delivery.executeOrderBumpDelivery({
+          config: input.config,
+          offer: orderBumpOffer,
+          resolver: input.resolver,
+          session: input.session,
+        });
+      }
+      await this.events.log(input.session, "upsell_paid", {
+        checkoutId: input.checkout.id,
+        upsellId: upsell.id,
+      });
+      return;
+    }
+
+    const downsell = input.checkout.downsell_id
+      ? input.config.graph.downsells.find(
+          (item) => item.id === input.checkout.downsell_id,
+        )
+      : null;
+    if (downsell) {
+      const exclusivePlan = downsell.exclusivePlans.find(
+        (item) => item.id === input.checkout.plan_id,
+      );
+      const orderBumpOffer =
+        downsell.orderBumpMode === "exclusive"
+          ? downsell.orderBump
+          : this.orderBump.findOffer(input.config, plan);
+
+      await this.delivery.executeSequenceDelivery({
+        config: input.config,
+        deliveryConfig: {
+          linkUrl:
+            downsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryConfig.linkUrl
+              : downsell.deliveryConfig?.linkUrl,
+          message:
+            downsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryConfig.message
+              : downsell.deliveryConfig?.message,
+          telegramDestinationId:
+            downsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryConfig.telegramDestinationId
+              : downsell.deliveryConfig?.telegramDestinationId,
+          type:
+            downsell.deliveryType === "exclusive_plans"
+              ? exclusivePlan?.deliveryType ?? "custom_message"
+              : downsell.deliveryType,
+        },
+        resolver: input.resolver,
+        session: input.session,
+        sequenceId: downsell.id,
+      });
+      if (input.checkout.order_bump_id) {
+        await this.delivery.executeOrderBumpDelivery({
+          config: input.config,
+          offer: orderBumpOffer,
+          resolver: input.resolver,
+          session: input.session,
+        });
+      }
+      await this.events.log(input.session, "downsell_paid", {
+        checkoutId: input.checkout.id,
+        downsellId: downsell.id,
+      });
+      return;
+    }
+
     await this.delivery.executeMainDelivery({ ...input, plan });
 
     if (input.checkout.order_bump_id) {

@@ -1,6 +1,7 @@
 import { CheckoutRuntime } from "@/server/services/workflow-runtime/checkout-runtime";
 import { ConversationRuntime } from "@/server/services/workflow-runtime/conversation-runtime";
 import { EventLogger } from "@/server/services/workflow-runtime/event-logger";
+import { OrderBumpExecutor } from "@/server/services/workflow-runtime/order-bump-executor";
 import { PaymentRuntime } from "@/server/services/workflow-runtime/payment-runtime";
 import { PaymentCompletionRuntime } from "@/server/services/workflow-runtime/payment-completion-runtime";
 import { PlanExecutor } from "@/server/services/workflow-runtime/plan-executor";
@@ -15,6 +16,7 @@ export class OfferCheckoutRuntime {
   private readonly checkout: CheckoutRuntime;
   private readonly conversation: ConversationRuntime;
   private readonly events: EventLogger;
+  private readonly orderBump = new OrderBumpExecutor();
   private readonly payment: PaymentRuntime;
   private readonly paymentCompletion: PaymentCompletionRuntime;
   private readonly plans = new PlanExecutor();
@@ -34,14 +36,20 @@ export class OfferCheckoutRuntime {
     session: RuntimeSession;
   }) {
     const [kind, sequenceId, planId] = input.data.split(":");
-    const plan = this.plans.findPlan(input.config, planId);
+    const plan = this.plans.findAnyPlan(input.config, planId);
     if (!plan) return { message: "Plano nao encontrado.", ok: false };
+    const sequence =
+      kind === "upsell"
+        ? input.config.graph.upsells.find((item) => item.id === sequenceId)
+        : input.config.graph.downsells.find((item) => item.id === sequenceId);
 
     const checkout = await this.checkout.createDraft({
       config: input.config,
+      downsellId: kind === "downsell" ? sequenceId : null,
       planId,
       session: input.session,
       subtotalCents: plan.priceCents,
+      upsellId: kind === "upsell" ? sequenceId : null,
     });
 
     await this.conversation.updateSession(input.session, {
@@ -56,6 +64,30 @@ export class OfferCheckoutRuntime {
       planId,
       sequenceId,
     });
+
+    const offer =
+      sequence?.orderBumpMode === "exclusive"
+        ? sequence.orderBump
+        : sequence?.orderBumpMode === "global"
+          ? this.orderBump.findOffer(input.config, plan)
+          : null;
+
+    if (offer?.enabled) {
+      await this.events.log(input.session, "order_bump_shown", {
+        checkoutId: checkout.id,
+        kind,
+        planId,
+        sequenceId,
+      });
+      await this.orderBump.sendOffer({
+        checkout,
+        config: input.config,
+        offer,
+        resolver: input.resolver,
+        session: input.session,
+      });
+      return { ok: true };
+    }
 
     const result = await this.payment.createPixAndSend({
       checkout,

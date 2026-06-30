@@ -19,6 +19,9 @@ import type {
   FlowPlanPriceVariationsTable,
   FlowPlansTable,
   FlowSessionsTable,
+  FlowUpsellSequenceMediaTable,
+  FlowUpsellSequencePlansTable,
+  FlowUpsellSequencesTable,
   FlowsTable,
   FlowVersionsTable,
 } from "@/types/database/flow-tables";
@@ -55,6 +58,9 @@ export type Database = {
       flow_plans: FlowPlansTable;
       flow_default_deliveries: FlowDefaultDeliveriesTable;
       flow_plan_price_variations: FlowPlanPriceVariationsTable;
+      flow_upsell_sequences: FlowUpsellSequencesTable;
+      flow_upsell_sequence_plans: FlowUpsellSequencePlansTable;
+      flow_upsell_sequence_media: FlowUpsellSequenceMediaTable;
       flow_sessions: FlowSessionsTable;
       flow_events: FlowEventsTable;
       flow_checkouts: FlowCheckoutsTable;
@@ -74,6 +80,15 @@ export type Database = {
       flow_binding_status: "active" | "paused" | "archived";
       flow_deployment_status: "active" | "paused" | "retired";
       flow_deployment_strategy: "single" | "ab_test" | "rollout";
+      flow_offer_delay_unit: "seconds" | "minutes";
+      flow_offer_delivery_type:
+        | "telegram_group"
+        | "telegram_channel"
+        | "link"
+        | "custom_message"
+        | "exclusive_plans";
+      flow_offer_button_color: "auto" | "blue" | "green" | "red";
+      flow_offer_order_bump_mode: "none" | "global" | "exclusive";
       payment_environment: "production" | "sandbox";
       payment_gateway_provider:
         | "sandbox"

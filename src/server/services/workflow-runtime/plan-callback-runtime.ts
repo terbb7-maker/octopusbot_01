@@ -140,8 +140,19 @@ export class PlanCallbackRuntime {
       return { message: "Checkout nao encontrado.", ok: false };
     }
 
-    const plan = this.plans.findPlan(config, checkout.plan_id);
-    const offer = plan ? this.orderBump.findOffer(config, plan) : null;
+    const plan = this.plans.findAnyPlan(config, checkout.plan_id);
+    const sequence =
+      session.current_step === "upsell" && session.current_offer
+        ? config.graph.upsells.find((item) => item.id === session.current_offer)
+        : session.current_step === "downsell" && session.current_offer
+          ? config.graph.downsells.find((item) => item.id === session.current_offer)
+          : null;
+    const offer =
+      sequence?.orderBumpMode === "exclusive"
+        ? sequence.orderBump
+        : plan
+          ? this.orderBump.findOffer(config, plan)
+          : null;
     let nextCheckout = checkout;
 
     if (decision === "accept" && offer?.enabled) {

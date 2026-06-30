@@ -109,6 +109,9 @@ const flowPlanSchema = z.object({
   ]),
   deliveryConfig: z.object({
     telegramDestinationId: z.string().max(200).optional(),
+    telegramChatId: z.number().optional(),
+    telegramChatTitle: z.string().max(160).optional(),
+    telegramChatType: z.enum(["group", "supergroup", "channel"]).optional(),
     linkUrl: z.string().max(500).optional(),
     message: z.string().max(1600).optional(),
   }),
@@ -260,15 +263,43 @@ const upsellImageSchema = z
   .optional();
 const upsellSequenceSchema = z.object({
   id: z.string().min(1).max(80),
+  delayValue: z.number().min(0).max(43200).default(0),
+  delayUnit: z.enum(["seconds", "minutes"]).default("minutes"),
   delayMinutes: z.number().int().min(0).max(43200),
   message: z.string().max(1200),
   image: upsellImageSchema,
+  media: editorMediaSchema.optional(),
   button: z.object({
     label: z.string().trim().min(1).max(40),
     value: z.string().max(120),
+    color: z.enum(["auto", "blue", "green", "red"]).optional(),
   }),
+  declineButton: z.object({
+    label: z.string().trim().min(1).max(40),
+    value: z.string().max(120),
+    color: z.enum(["auto", "blue", "green", "red"]).optional(),
+  }).optional(),
+  required: z.boolean().default(false),
   planId: z.string().max(80).optional(),
+  exclusivePlans: z.array(flowPlanSchema).max(10).default([]),
+  deliveryType: z.enum([
+    "telegram_group",
+    "telegram_channel",
+    "link",
+    "custom_message",
+    "exclusive_plans",
+  ]).default("exclusive_plans"),
+  deliveryConfig: z.object({
+    telegramDestinationId: z.string().max(200).optional(),
+    telegramChatId: z.number().optional(),
+    telegramChatTitle: z.string().max(160).optional(),
+    telegramChatType: z.enum(["group", "supergroup", "channel"]).optional(),
+    linkUrl: z.string().max(500).optional(),
+    message: z.string().max(4000).optional(),
+  }).default({}),
   deliveryId: z.string().max(80).optional(),
+  orderBumpMode: z.enum(["global", "exclusive", "none"]).default("none"),
+  orderBump: orderBumpOfferSchema.nullable().optional(),
 });
 const upsellsSchema = z.array(upsellSequenceSchema).max(5);
 const downsellsSchema = z.array(upsellSequenceSchema).max(20);

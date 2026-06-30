@@ -127,6 +127,15 @@ export class CallbackRuntime {
         await this.answer(update, config.bot.token);
         return this.offerCheckout.handle({ config, data, resolver, session });
       }
+      if (data.startsWith("upsell_decline:")) {
+        await this.answer(update, config.bot.token, "Tudo bem, vamos continuar.");
+        await sendTelegramMessage({
+          chatId: Number(session.telegram_chat_external_id),
+          text: "Tudo bem. Seguimos sem esta oferta.",
+          token: config.bot.token,
+        });
+        return { ok: true };
+      }
 
       await this.answer(update, config.bot.token, "Acao indisponivel.");
       return { ignored: true, ok: true };

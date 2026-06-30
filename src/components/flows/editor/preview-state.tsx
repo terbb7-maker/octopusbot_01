@@ -221,10 +221,38 @@ export function PreviewStateProvider({
       upsells: upsells.map((upsell) => ({
         ...upsell,
         image: upsell.image ? stripSigned(upsell.image) : null,
+        media: stripMediaSigned(upsell.media),
+        exclusivePlans: upsell.exclusivePlans.map((plan) => ({
+          ...plan,
+          image: plan.image ? stripSigned(plan.image) : null,
+        })),
+        orderBump: upsell.orderBump
+          ? {
+              ...upsell.orderBump,
+              image: upsell.orderBump.image
+                ? stripSigned(upsell.orderBump.image)
+                : null,
+              media: stripMediaSigned(upsell.orderBump.media),
+            }
+          : null,
       })),
       downsells: downsells.map((downsell) => ({
         ...downsell,
         image: downsell.image ? stripSigned(downsell.image) : null,
+        media: stripMediaSigned(downsell.media),
+        exclusivePlans: downsell.exclusivePlans.map((plan) => ({
+          ...plan,
+          image: plan.image ? stripSigned(plan.image) : null,
+        })),
+        orderBump: downsell.orderBump
+          ? {
+              ...downsell.orderBump,
+              image: downsell.orderBump.image
+                ? stripSigned(downsell.orderBump.image)
+                : null,
+              media: stripMediaSigned(downsell.orderBump.media),
+            }
+          : null,
       })),
     };
     const result = await saveBasicFlowEditorAction(flow.id, payload);
