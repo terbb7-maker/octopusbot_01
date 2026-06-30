@@ -265,7 +265,7 @@ const upsellSequenceSchema = z.object({
   id: z.string().min(1).max(80),
   delayValue: z.number().min(0).max(43200).default(0),
   delayUnit: z.enum(["seconds", "minutes"]).default("minutes"),
-  delayMinutes: z.number().int().min(0).max(43200),
+  delayMinutes: z.number().min(0).max(43200),
   message: z.string().max(1200),
   image: upsellImageSchema,
   media: editorMediaSchema.optional(),
