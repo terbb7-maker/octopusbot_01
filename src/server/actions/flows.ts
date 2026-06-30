@@ -56,15 +56,16 @@ const requiredMediaSchema = z.object({
   url: z.string().max(500).optional(),
   order: z.number().int().min(0).max(50).optional(),
 });
+const editorMediaSchema = z.object({
+  type: z.enum(["image", "video", "audio"]).optional(),
+  groupImages: z.boolean().optional(),
+  images: z.array(requiredMediaSchema).max(5).optional(),
+  image: mediaSchema,
+  video: requiredMediaSchema.nullable().optional(),
+  audio: requiredMediaSchema.nullable().optional(),
+});
 const initialConfigSchema = z.object({
-  media: z.object({
-    type: z.enum(["image", "video", "audio"]).optional(),
-    groupImages: z.boolean().optional(),
-    images: z.array(requiredMediaSchema).max(5).optional(),
-    image: mediaSchema,
-    video: requiredMediaSchema.nullable().optional(),
-    audio: requiredMediaSchema.nullable().optional(),
-  }).optional(),
+  media: editorMediaSchema.optional(),
   message: z.string().max(4000).optional(),
   html: z.string().max(12000).optional(),
   variables: z.array(z.string().trim().min(1).max(32)).max(20).optional(),
@@ -210,8 +211,33 @@ const orderBumpOfferSchema = z.object({
   priceCents: z.number().int().min(0).max(99999900),
   message: z.string().max(1200),
   image: orderBumpImageSchema,
+  media: editorMediaSchema.optional(),
+  acceptButtonText: z.string().trim().min(1).max(40).default("✅ Quero aproveitar"),
+  acceptButtonColor: z.enum(["auto", "blue", "green", "red"]).default("auto"),
+  declineButtonText: z
+    .string()
+    .trim()
+    .min(1)
+    .max(40)
+    .default("❌ Continuar sem bônus"),
+  declineButtonColor: z.enum(["auto", "blue", "green", "red"]).default("auto"),
   buttons: z.array(orderBumpButtonSchema).max(3),
   deliveryId: z.string().max(80).optional(),
+  deliveryType: z.enum([
+    "default",
+    "telegram_group",
+    "telegram_channel",
+    "link",
+    "custom_message",
+  ]).default("default"),
+  deliveryConfig: z.object({
+    telegramDestinationId: z.string().max(200).optional(),
+    telegramChatId: z.number().optional(),
+    telegramChatTitle: z.string().max(160).optional(),
+    telegramChatType: z.enum(["group", "supergroup", "channel"]).optional(),
+    linkUrl: z.string().max(500).optional(),
+    message: z.string().max(4000).optional(),
+  }).default({}),
 });
 const orderBumpsSchema = z.object({
   global: orderBumpOfferSchema,
@@ -413,10 +439,12 @@ export async function uploadInitialConfigMediaAction(formData: FormData) {
     .object({
       flowId: flowIdSchema,
       kind: z.enum(["image", "video", "audio"]),
+      folder: z.string().min(1).max(120).optional(),
     })
     .safeParse({
       flowId: formData.get("flowId"),
       kind: formData.get("kind"),
+      folder: formData.get("folder") || undefined,
     });
   const files = formData
     .getAll("files")
@@ -460,6 +488,7 @@ export async function uploadInitialConfigMediaAction(formData: FormData) {
 
   for (const file of files) {
     const result = await uploadInitialConfigMedia({
+      folder: parsed.data.folder,
       flowId: parsed.data.flowId,
       kind: parsed.data.kind,
       file,

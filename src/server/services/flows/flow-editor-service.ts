@@ -344,6 +344,27 @@ function readMessages(graph: Json | undefined): FlowMessagesConfig {
 
 function readOrderBumpOffer(value: Json | undefined): FlowOrderBumpOffer {
   const record = jsonRecord(value);
+  const deliveryType =
+    record.deliveryType === "telegram_group" ||
+    record.deliveryType === "telegram_channel" ||
+    record.deliveryType === "link" ||
+    record.deliveryType === "custom_message"
+      ? record.deliveryType
+      : record.deliveryType === "default"
+        ? "default"
+        : "default";
+  const acceptButtonColor =
+    record.acceptButtonColor === "blue" ||
+    record.acceptButtonColor === "green" ||
+    record.acceptButtonColor === "red"
+      ? record.acceptButtonColor
+      : "auto";
+  const declineButtonColor =
+    record.declineButtonColor === "blue" ||
+    record.declineButtonColor === "green" ||
+    record.declineButtonColor === "red"
+      ? record.declineButtonColor
+      : "auto";
 
   return {
     enabled: typeof record.enabled === "boolean" ? record.enabled : false,
@@ -352,9 +373,23 @@ function readOrderBumpOffer(value: Json | undefined): FlowOrderBumpOffer {
       typeof record.priceCents === "number" ? record.priceCents : 0,
     message: typeof record.message === "string" ? record.message : "",
     image: readOrderBumpImage(record.image),
+    media: record.media ? readInitialMedia(record.media) : undefined,
+    acceptButtonText:
+      typeof record.acceptButtonText === "string" && record.acceptButtonText.trim()
+        ? record.acceptButtonText
+        : "✅ Quero aproveitar",
+    acceptButtonColor,
+    declineButtonText:
+      typeof record.declineButtonText === "string" &&
+      record.declineButtonText.trim()
+        ? record.declineButtonText
+        : "❌ Continuar sem bônus",
+    declineButtonColor,
     buttons: readOrderBumpButtons(record.buttons),
     deliveryId:
       typeof record.deliveryId === "string" ? record.deliveryId : "",
+    deliveryType,
+    deliveryConfig: jsonRecord(record.deliveryConfig),
   };
 }
 
@@ -653,7 +688,13 @@ async function signOrderBumpOfferImage(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   offer: FlowOrderBumpOffer,
 ) {
-  if (!offer.image?.path) return offer;
+  const mediaConfig = await withSignedMediaUrls(supabase, {
+    media: offer.media,
+  });
+
+  if (!offer.image?.path) {
+    return { ...offer, media: mediaConfig.media };
+  }
 
   const { data } = await supabase.storage
     .from(FLOW_MEDIA_BUCKET)
@@ -661,6 +702,7 @@ async function signOrderBumpOfferImage(
 
   return {
     ...offer,
+    media: mediaConfig.media,
     image: {
       ...offer.image,
       signedUrl: data?.signedUrl ?? null,

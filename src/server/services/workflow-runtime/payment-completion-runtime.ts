@@ -55,9 +55,9 @@ export class PaymentCompletionRuntime {
 
     if (input.checkout.order_bump_id) {
       const offer = this.orderBump.findOffer(input.config, plan);
-      await this.delivery.executeNamedDelivery({
+      await this.delivery.executeOrderBumpDelivery({
         config: input.config,
-        deliveryId: offer?.deliveryId,
+        offer,
         resolver: input.resolver,
         session: input.session,
       });

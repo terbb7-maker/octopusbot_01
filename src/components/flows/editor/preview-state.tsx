@@ -59,6 +59,18 @@ function stripSigned<T extends { signedUrl?: string | null }>(item: T) {
   return rest;
 }
 
+function stripMediaSigned(media: FlowInitialConfig["media"]) {
+  if (!media) return undefined;
+
+  return {
+    ...media,
+    image: media.image ? stripSigned(media.image) : undefined,
+    images: (media.images ?? []).map(stripSigned),
+    video: media.video ? stripSigned(media.video) : null,
+    audio: media.audio ? stripSigned(media.audio) : null,
+  };
+}
+
 export function PreviewStateProvider({
   children,
   flow,
@@ -170,21 +182,7 @@ export function PreviewStateProvider({
     const payload = {
       initialConfig: {
         ...initialConfig,
-        media: initialConfig.media
-          ? {
-              ...initialConfig.media,
-              image: initialConfig.media.image
-                ? stripSigned(initialConfig.media.image)
-                : undefined,
-              images: (initialConfig.media.images ?? []).map(stripSigned),
-              video: initialConfig.media.video
-                ? stripSigned(initialConfig.media.video)
-                : null,
-              audio: initialConfig.media.audio
-                ? stripSigned(initialConfig.media.audio)
-                : null,
-            }
-          : undefined,
+        media: stripMediaSigned(initialConfig.media),
       },
       plans: plans.map((plan) => ({
         ...plan,
@@ -212,10 +210,12 @@ export function PreviewStateProvider({
           image: orderBumps.global.image
             ? stripSigned(orderBumps.global.image)
             : null,
+          media: stripMediaSigned(orderBumps.global.media),
         },
         individual: orderBumps.individual.map((offer) => ({
           ...offer,
           image: offer.image ? stripSigned(offer.image) : null,
+          media: stripMediaSigned(offer.media),
         })),
       },
       upsells: upsells.map((upsell) => ({

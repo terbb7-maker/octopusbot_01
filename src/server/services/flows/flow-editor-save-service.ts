@@ -81,6 +81,7 @@ export async function saveBasicFlowEditorData(
 
   const now = new Date().toISOString();
   const cta = input.initialConfig.cta;
+  const globalOrderBump = input.orderBumps.global;
   const nextGraph = {
     ...jsonRecord(version.graph_json),
     ...input,
@@ -98,6 +99,25 @@ export async function saveBasicFlowEditorData(
       cta_url: cta?.enabled && cta.action === "open_link" ? cta.url || null : null,
       cta_message:
         cta?.enabled && cta.action === "send_message" ? cta.message || null : null,
+      order_bump_accept_button_text:
+        globalOrderBump.acceptButtonText || "✅ Quero aproveitar",
+      order_bump_accept_button_color: globalOrderBump.acceptButtonColor || "auto",
+      order_bump_decline_button_text:
+        globalOrderBump.declineButtonText || "❌ Continuar sem bônus",
+      order_bump_decline_button_color: globalOrderBump.declineButtonColor || "auto",
+      order_bump_media_type: globalOrderBump.media?.type ?? null,
+      order_bump_media_group: Boolean(globalOrderBump.media?.groupImages),
+      order_bump_delivery_type: globalOrderBump.deliveryType ?? "default",
+      order_bump_delivery_chat_id:
+        globalOrderBump.deliveryConfig.telegramChatId ?? null,
+      order_bump_delivery_url:
+        globalOrderBump.deliveryType === "link"
+          ? globalOrderBump.deliveryConfig.linkUrl || null
+          : null,
+      order_bump_delivery_message:
+        globalOrderBump.deliveryType === "custom_message"
+          ? globalOrderBump.deliveryConfig.message || null
+          : null,
       validation_status: "pending",
     })
     .eq("id", version.id)

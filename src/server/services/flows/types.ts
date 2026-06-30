@@ -83,6 +83,8 @@ export type FlowInitialConfigMedia = {
   image?: FlowInitialConfigMediaValue;
 };
 
+export type FlowEditorMedia = FlowInitialConfigMedia;
+
 export type FlowInitialCtaAction = "show_plans" | "open_link" | "send_message";
 
 export type FlowInitialCta = {
@@ -118,6 +120,8 @@ export type FlowPlanBillingType =
 
 export type FlowPlanButtonColor = "default" | "blue" | "green" | "red";
 
+export type FlowButtonColor = "auto" | "blue" | "green" | "red";
+
 export type FlowPlanDeliveryType =
   | "default"
   | "telegram_group"
@@ -135,6 +139,9 @@ export type FlowPlanStats = {
 
 export type FlowPlanDeliveryConfig = {
   telegramDestinationId?: string;
+  telegramChatId?: number;
+  telegramChatTitle?: string;
+  telegramChatType?: "group" | "supergroup" | "channel";
   linkUrl?: string;
   message?: string;
 };
@@ -234,8 +241,15 @@ export type FlowOrderBumpOffer = {
   priceCents: number;
   message: string;
   image?: FlowOrderBumpImage | null;
+  media?: FlowEditorMedia;
+  acceptButtonText: string;
+  acceptButtonColor: FlowButtonColor;
+  declineButtonText: string;
+  declineButtonColor: FlowButtonColor;
   buttons: FlowOrderBumpButton[];
   deliveryId?: string;
+  deliveryType: FlowPlanDeliveryType;
+  deliveryConfig: FlowPlanDeliveryConfig;
 };
 
 export type FlowOrderBumpIndividual = FlowOrderBumpOffer & {

@@ -2,6 +2,7 @@
 
 import { memo } from "react";
 
+import { flowButtonColorHex } from "@/components/flows/editor/button-config-field";
 import {
   formatPreviewPrice,
   renderPreviewText,
@@ -38,6 +39,19 @@ function initialMediaItems(state: PreviewStateValue) {
   return media.images?.length ? media.images : media.image ? [media.image] : [];
 }
 
+function offerMediaItems(state: PreviewStateValue) {
+  const media = state.orderBumps.global.media;
+
+  if (!media) {
+    return state.orderBumps.global.image ? [state.orderBumps.global.image] : [];
+  }
+
+  if (media.type === "video") return media.video ? [media.video] : [];
+  if (media.type === "audio") return media.audio ? [media.audio] : [];
+
+  return media.images?.length ? media.images : media.image ? [media.image] : [];
+}
+
 export const PreviewRenderer = memo(function PreviewRenderer({
   onPhaseChange,
   phase,
@@ -55,7 +69,10 @@ export const PreviewRenderer = memo(function PreviewRenderer({
         <TelegramButtons
           buttons={state.plans.map((item) => ({
             label: `${item.name || "Plano"} • ${formatPreviewPrice(item.priceCents)}`,
-            onClick: () => onPhaseChange("pix"),
+            onClick: () =>
+              state.orderBumps.global.enabled
+                ? onPhaseChange("order-bump")
+                : onPhaseChange("pix"),
           }))}
         />
       </MessageBubble>
@@ -126,7 +143,7 @@ export const PreviewRenderer = memo(function PreviewRenderer({
         </p>
         {delivery?.file ? <MediaRenderer media={delivery.file} /> : null}
         <TelegramButtons
-          buttons={[{ label: "Continuar", onClick: () => onPhaseChange("order-bump") }]}
+          buttons={[{ label: "Continuar", onClick: () => onPhaseChange("upsell") }]}
         />
       </MessageBubble>
     );
@@ -137,7 +154,9 @@ export const PreviewRenderer = memo(function PreviewRenderer({
 
     return (
       <MessageBubble>
-        {bump.image ? <MediaRenderer media={bump.image} /> : null}
+        {offerMediaItems(state).map((media) =>
+          media ? <MediaRenderer key={media.path} media={media} /> : null,
+        )}
         <p className="font-semibold">{bump.title || "Oferta adicional"}</p>
         <p className="whitespace-pre-wrap">
           {renderPreviewText(bump.message || "Adicione esta oferta ao pedido.", state)}
@@ -147,8 +166,16 @@ export const PreviewRenderer = memo(function PreviewRenderer({
         </p>
         <TelegramButtons
           buttons={[
-            { label: bump.buttons[0]?.label || "Aceitar", onClick: () => onPhaseChange("upsell") },
-            { label: "Recusar", onClick: () => onPhaseChange("upsell") },
+            {
+              color: flowButtonColorHex(bump.acceptButtonColor || "auto"),
+              label: bump.acceptButtonText || "✅ Quero aproveitar",
+              onClick: () => onPhaseChange("pix"),
+            },
+            {
+              color: flowButtonColorHex(bump.declineButtonColor || "auto"),
+              label: bump.declineButtonText || "❌ Continuar sem bônus",
+              onClick: () => onPhaseChange("pix"),
+            },
           ]}
         />
       </MessageBubble>

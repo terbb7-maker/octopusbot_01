@@ -8,16 +8,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { uploadInitialConfigMediaAction } from "@/server/actions/flows";
 import type {
-  FlowInitialConfig,
+  FlowEditorMedia,
   FlowInitialConfigMediaKind,
   FlowInitialConfigMediaValue,
 } from "@/server/services/flows";
 import { cn } from "@/lib/utils";
 
 type MediaUploaderProps = {
-  config: FlowInitialConfig;
+  folder?: string;
   flowId: string;
-  onChange: (config: FlowInitialConfig) => void;
+  media?: FlowEditorMedia;
+  onChange: (media: FlowEditorMedia) => void;
 };
 
 const limits = {
@@ -50,7 +51,7 @@ const limits = {
   multiple: boolean;
 }>;
 
-function orderedMedia(media: FlowInitialConfig["media"]) {
+function orderedMedia(media: FlowEditorMedia | undefined) {
   if (!media) return [];
 
   if (media.type === "video") return media.video ? [media.video] : [];
@@ -63,8 +64,13 @@ function orderedMedia(media: FlowInitialConfig["media"]) {
       : [];
 }
 
-export function MediaUploader({ config, flowId, onChange }: MediaUploaderProps) {
-  const mediaType = config.media?.type ?? "image";
+export function MediaUploader({
+  folder,
+  flowId,
+  media: mediaConfig,
+  onChange,
+}: MediaUploaderProps) {
+  const mediaType = mediaConfig?.type ?? "image";
   const current = limits[mediaType];
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [status, setStatus] = useState("");
@@ -80,6 +86,7 @@ export function MediaUploader({ config, flowId, onChange }: MediaUploaderProps) 
     const formData = new FormData();
     formData.set("flowId", flowId);
     formData.set("kind", mediaType);
+    if (folder) formData.set("folder", folder);
     selected.slice(0, mediaType === "image" ? 5 : 1).forEach((file) => {
       formData.append("files", file);
     });
@@ -97,26 +104,23 @@ export function MediaUploader({ config, flowId, onChange }: MediaUploaderProps) 
       url: (item as FlowInitialConfigMediaValue).url ?? item.path,
     }));
     const nextMedia = {
-      ...(config.media ?? {}),
+      ...(mediaConfig ?? {}),
       type: mediaType,
-      groupImages: config.media?.groupImages ?? false,
+      groupImages: mediaConfig?.groupImages ?? false,
       images: mediaType === "image" ? media : [],
       video: mediaType === "video" ? media[0] ?? null : null,
       audio: mediaType === "audio" ? media[0] ?? null : null,
     };
 
-    onChange({ ...config, media: nextMedia });
+    onChange(nextMedia);
     setStatus("Midia pronta para salvar.");
   }
 
   function changeType(type: FlowInitialConfigMediaKind) {
     onChange({
-      ...config,
-      media: {
-        ...(config.media ?? {}),
-        type,
-        groupImages: type === "image" ? config.media?.groupImages ?? false : false,
-      },
+      ...(mediaConfig ?? {}),
+      type,
+      groupImages: type === "image" ? mediaConfig?.groupImages ?? false : false,
     });
   }
 
@@ -185,15 +189,12 @@ export function MediaUploader({ config, flowId, onChange }: MediaUploaderProps) 
         <label className="flex items-center gap-2 text-sm text-muted-foreground">
           <input
             type="checkbox"
-            checked={Boolean(config.media?.groupImages)}
+            checked={Boolean(mediaConfig?.groupImages)}
             onChange={(event) =>
               onChange({
-                ...config,
-                media: {
-                  ...(config.media ?? {}),
-                  type: "image",
-                  groupImages: event.target.checked,
-                },
+                ...(mediaConfig ?? {}),
+                type: "image",
+                groupImages: event.target.checked,
               })
             }
           />
@@ -202,14 +203,14 @@ export function MediaUploader({ config, flowId, onChange }: MediaUploaderProps) 
       ) : null}
 
       <div className="grid gap-2">
-        {orderedMedia(config.media).map((media) => (
+        {orderedMedia(mediaConfig).map((media) => (
           <MediaRenderer key={media.path} media={media} />
         ))}
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{status || "Uploads sao enviados ao Storage e salvos no fluxo ao clicar em Salvar tudo."}</span>
-        {orderedMedia(config.media).length ? (
+        {orderedMedia(mediaConfig).length ? (
           <Button
             type="button"
             size="sm"
@@ -217,14 +218,11 @@ export function MediaUploader({ config, flowId, onChange }: MediaUploaderProps) 
             className="border-white/10"
             onClick={() =>
               onChange({
-                ...config,
-                media: {
-                  ...(config.media ?? {}),
-                  images: [],
-                  video: null,
-                  audio: null,
-                  image: undefined,
-                },
+                ...(mediaConfig ?? {}),
+                images: [],
+                video: null,
+                audio: null,
+                image: undefined,
               })
             }
           >

@@ -95,10 +95,12 @@ function extensionFor(file: File) {
 
 export async function uploadInitialConfigMedia({
   flowId,
+  folder = "initial",
   kind,
   file,
 }: {
   flowId: string;
+  folder?: string;
   kind: FlowInitialConfigMediaKind;
   file: File;
 }) {
@@ -108,7 +110,7 @@ export async function uploadInitialConfigMedia({
     return { ok: false, message: "Versao draft nao encontrada." };
   }
 
-  const path = `${workspaceId}/${flowId}/initial/${kind}-${randomUUID()}.${extensionFor(file)}`;
+  const path = `${workspaceId}/${flowId}/${folder}/${kind}-${randomUUID()}.${extensionFor(file)}`;
   const { error } = await supabase.storage.from(FLOW_MEDIA_BUCKET).upload(path, file, {
     contentType: file.type,
     upsert: false,

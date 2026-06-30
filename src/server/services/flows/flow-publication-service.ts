@@ -2,7 +2,10 @@ import { createHash } from "crypto";
 
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { getAuthenticatedFlowWorkspace } from "@/server/services/flows/flow-context";
-import type { FlowActionResult } from "@/server/services/flows/types";
+import type {
+  FlowActionResult,
+  FlowPlanDeliveryType,
+} from "@/server/services/flows/types";
 import type { Json } from "@/types/database";
 
 type DraftVersion = {
@@ -15,6 +18,16 @@ type DraftVersion = {
   flow_id: string;
   graph_json: Json;
   id: string;
+  order_bump_accept_button_color: "auto" | "blue" | "green" | "red";
+  order_bump_accept_button_text: string | null;
+  order_bump_decline_button_color: "auto" | "blue" | "green" | "red";
+  order_bump_decline_button_text: string | null;
+  order_bump_delivery_chat_id: number | null;
+  order_bump_delivery_message: string | null;
+  order_bump_delivery_type: FlowPlanDeliveryType | null;
+  order_bump_delivery_url: string | null;
+  order_bump_media_group: boolean;
+  order_bump_media_type: "image" | "video" | "audio" | null;
   version_number: number;
   workspace_id: string;
 };
@@ -69,6 +82,16 @@ export async function publishFlow(flowId: string): Promise<FlowActionResult> {
       flow_id: flowId,
       graph_json: draft.graph_json,
       graph_schema_version: 1,
+      order_bump_accept_button_color: draft.order_bump_accept_button_color,
+      order_bump_accept_button_text: draft.order_bump_accept_button_text,
+      order_bump_decline_button_color: draft.order_bump_decline_button_color,
+      order_bump_decline_button_text: draft.order_bump_decline_button_text,
+      order_bump_delivery_chat_id: draft.order_bump_delivery_chat_id,
+      order_bump_delivery_message: draft.order_bump_delivery_message,
+      order_bump_delivery_type: draft.order_bump_delivery_type,
+      order_bump_delivery_url: draft.order_bump_delivery_url,
+      order_bump_media_group: draft.order_bump_media_group,
+      order_bump_media_type: draft.order_bump_media_type,
       published_at: publishedAt,
       published_by: userId,
       status: "published",

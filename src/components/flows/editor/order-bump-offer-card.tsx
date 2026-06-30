@@ -1,27 +1,29 @@
 "use client";
 
-import { ImagePlus, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 
-import { OrderBumpButtonsField } from "@/components/flows/editor/order-bump-buttons-field";
+import { ButtonConfigField } from "@/components/flows/editor/button-config-field";
+import { DeliveryConfigField } from "@/components/flows/editor/delivery-config-field";
+import { MediaUploader } from "@/components/flows/editor/media-uploader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type {
-  FlowDelivery,
   FlowOrderBumpOffer,
   FlowPlan,
+  TelegramDeliveryDestination,
 } from "@/server/services/flows";
 
 type OrderBumpOfferCardProps = {
   bumpId: string;
-  deliveries: FlowDelivery[];
+  destinations: TelegramDeliveryDestination[];
+  flowId: string;
   offer: FlowOrderBumpOffer;
   planId?: string;
   plans?: FlowPlan[];
   title: string;
   onChange: (offer: FlowOrderBumpOffer) => void;
-  onImageUpload: (file: File) => void;
   onPlanChange?: (planId: string) => void;
   onRemove?: () => void;
 };
@@ -38,13 +40,13 @@ function inputToCents(value: string) {
 
 export function OrderBumpOfferCard({
   bumpId,
-  deliveries,
+  destinations,
+  flowId,
   offer,
   planId,
   plans = [],
   title,
   onChange,
-  onImageUpload,
   onPlanChange,
   onRemove,
 }: OrderBumpOfferCardProps) {
@@ -140,44 +142,48 @@ export function OrderBumpOfferCard({
           />
         </Field>
 
-        <label className="flex cursor-pointer items-center gap-3 rounded-md border border-white/10 bg-white/[0.035] p-3 text-sm text-muted-foreground">
-          <input
-            type="file"
-            accept="image/*"
-            className="sr-only"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              if (file) onImageUpload(file);
-            }}
-          />
-          <ImagePlus className="size-4 text-primary" aria-hidden="true" />
-          <span className="truncate">
-            {offer.image?.name ?? `Adicionar imagem (${bumpId})`}
-          </span>
-        </label>
+        <MediaUploader
+          folder={`order-bumps/${bumpId}`}
+          flowId={flowId}
+          media={offer.media}
+          onChange={(media) => onChange({ ...offer, media })}
+        />
 
-        <Field label="Entrega">
-          <select
-            value={offer.deliveryId ?? ""}
-            onChange={(event) =>
-              onChange({ ...offer, deliveryId: event.target.value })
+        <div className="grid gap-3 lg:grid-cols-2">
+          <ButtonConfigField
+            title="Botão Aceitar"
+            label={offer.acceptButtonText || "✅ Quero aproveitar"}
+            color={offer.acceptButtonColor || "auto"}
+            onChange={(button) =>
+              onChange({
+                ...offer,
+                acceptButtonColor: button.color,
+                acceptButtonText: button.label,
+              })
             }
-            className="h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="" className="bg-background">
-              Sem entrega vinculada
-            </option>
-            {deliveries.map((delivery) => (
-              <option key={delivery.id} value={delivery.id} className="bg-background">
-                {delivery.name}
-              </option>
-            ))}
-          </select>
-        </Field>
+          />
+          <ButtonConfigField
+            title="Botão Recusar"
+            label={offer.declineButtonText || "❌ Continuar sem bônus"}
+            color={offer.declineButtonColor || "auto"}
+            onChange={(button) =>
+              onChange({
+                ...offer,
+                declineButtonColor: button.color,
+                declineButtonText: button.label,
+              })
+            }
+          />
+        </div>
 
-        <OrderBumpButtonsField
-          buttons={offer.buttons}
-          onChange={(buttons) => onChange({ ...offer, buttons })}
+        <DeliveryConfigField
+          config={offer.deliveryConfig ?? {}}
+          destinations={destinations}
+          title="Destino da entrega"
+          type={offer.deliveryType ?? "default"}
+          onChange={(deliveryType, deliveryConfig) =>
+            onChange({ ...offer, deliveryConfig, deliveryType })
+          }
         />
       </div>
     </article>

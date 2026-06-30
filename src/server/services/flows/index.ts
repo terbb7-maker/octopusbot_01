@@ -47,6 +47,8 @@ export type {
   FlowInitialConfigMedia,
   FlowInitialConfigMediaKind,
   FlowInitialConfigMediaValue,
+  FlowEditorMedia,
+  FlowButtonColor,
   FlowBotOption,
   FlowPlan,
   FlowPlanBillingType,

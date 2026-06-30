@@ -1,6 +1,7 @@
 import { sendTelegramMessage } from "@/server/adapters/telegram/telegram-adapter";
 import type {
   FlowDelivery,
+  FlowOrderBumpOffer,
   FlowPlan,
   FlowPlanDefaultDelivery,
 } from "@/server/services/flows";
@@ -107,6 +108,50 @@ export class DeliveryRuntime {
     });
   }
 
+  async executeOrderBumpDelivery(input: {
+    config: RuntimeConfig;
+    offer: FlowOrderBumpOffer | null | undefined;
+    resolver: VariableResolver;
+    session: RuntimeSession;
+  }) {
+    const offer = input.offer;
+
+    if (!offer) return;
+
+    if (offer.deliveryType && offer.deliveryType !== "default") {
+      await this.sendDelivery(input.config, input.session, input.resolver, {
+        linkUrl: offer.deliveryConfig?.linkUrl,
+        message: offer.deliveryConfig?.message,
+        telegramDestinationId: offer.deliveryConfig?.telegramDestinationId,
+        type: offer.deliveryType,
+      });
+      await this.events.log(input.session, "delivery_completed", {
+        kind: "order_bump",
+      });
+      return;
+    }
+
+    if (input.config.graph.planDefaultDelivery) {
+      await this.sendDelivery(
+        input.config,
+        input.session,
+        input.resolver,
+        input.config.graph.planDefaultDelivery,
+      );
+      await this.events.log(input.session, "delivery_completed", {
+        kind: "order_bump_default",
+      });
+      return;
+    }
+
+    await this.executeNamedDelivery({
+      config: input.config,
+      deliveryId: offer.deliveryId,
+      resolver: input.resolver,
+      session: input.session,
+    });
+  }
+
   private async sendDelivery(
     config: RuntimeConfig,
     session: RuntimeSession,
@@ -127,7 +172,15 @@ export class DeliveryRuntime {
     if (delivery.type === "link" && delivery.linkUrl) {
       await sendTelegramMessage({
         chatId,
-        text: resolver.render(delivery.linkUrl),
+        replyMarkup: {
+          inline_keyboard: [[
+            {
+              text: "Acessar",
+              url: resolver.render(delivery.linkUrl),
+            },
+          ]],
+        },
+        text: "Seu acesso foi liberado.",
         token: config.bot.token,
       });
       return;

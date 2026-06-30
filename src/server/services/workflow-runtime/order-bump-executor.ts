@@ -19,12 +19,23 @@ function money(cents: number) {
   }).format(cents / 100);
 }
 
-function keyboard(checkoutId: string): TelegramInlineKeyboardMarkup {
+function offerKeyboard(
+  checkoutId: string,
+  offer: FlowOrderBumpOffer,
+): TelegramInlineKeyboardMarkup {
   return {
     inline_keyboard: [
       [
-        { callback_data: `order_bump:accept:${checkoutId}`, text: "Adicionar" },
-        { callback_data: `order_bump:decline:${checkoutId}`, text: "Continuar sem" },
+        {
+          callback_data: `order_bump:accept:${checkoutId}`,
+          text: offer.acceptButtonText || "✅ Quero aproveitar",
+        },
+      ],
+      [
+        {
+          callback_data: `order_bump:decline:${checkoutId}`,
+          text: offer.declineButtonText || "❌ Continuar sem bônus",
+        },
       ],
     ],
   };
@@ -51,13 +62,16 @@ export class OrderBumpExecutor {
     resolver: VariableResolver;
     session: RuntimeSession;
   }) {
-    if (input.offer.image?.path) {
+    if (input.offer.media) {
       await this.media.sendInitialMedia({
         chatId: Number(input.session.telegram_chat_external_id),
-        media: {
-          image: input.offer.image,
-          type: "image",
-        },
+        media: input.offer.media,
+        token: input.config.bot.token,
+      });
+    } else if (input.offer.image?.path) {
+      await this.media.sendInitialMedia({
+        chatId: Number(input.session.telegram_chat_external_id),
+        media: { image: input.offer.image, type: "image" },
         token: input.config.bot.token,
       });
     }
@@ -72,7 +86,7 @@ export class OrderBumpExecutor {
 
     await sendTelegramMessage({
       chatId: Number(input.session.telegram_chat_external_id),
-      replyMarkup: keyboard(input.checkout.id),
+      replyMarkup: offerKeyboard(input.checkout.id, input.offer),
       text,
       token: input.config.bot.token,
     });

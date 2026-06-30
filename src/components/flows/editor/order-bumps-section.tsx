@@ -1,12 +1,10 @@
 "use client";
 
-import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { OrderBumpOfferCard } from "@/components/flows/editor/order-bump-offer-card";
 import { usePreviewState } from "@/components/flows/editor/preview-state";
 import { Button } from "@/components/ui/button";
-import { uploadFlowOrderBumpImageAction } from "@/server/actions/flows";
 import type {
   BasicFlowEditorData,
   FlowOrderBumpIndividual,
@@ -24,8 +22,15 @@ function blankOffer(): FlowOrderBumpOffer {
     priceCents: 0,
     message: "",
     image: null,
+    media: { type: "image", groupImages: false, images: [] },
+    acceptButtonText: "✅ Quero aproveitar",
+    acceptButtonColor: "auto",
+    declineButtonText: "❌ Continuar sem bônus",
+    declineButtonColor: "auto",
     buttons: [],
     deliveryId: "",
+    deliveryType: "default",
+    deliveryConfig: {},
   };
 }
 
@@ -44,8 +49,7 @@ function createIndividual(planId = ""): FlowOrderBumpIndividual {
 }
 
 export function OrderBumpsSection({ flow }: OrderBumpsSectionProps) {
-  const { deliveries, orderBumps, plans, setOrderBumps } = usePreviewState();
-  const [uploadState, setUploadState] = useState("");
+  const { orderBumps, plans, setOrderBumps } = usePreviewState();
 
   function updateIndividual(offer: FlowOrderBumpIndividual) {
     setOrderBumps({
@@ -54,32 +58,6 @@ export function OrderBumpsSection({ flow }: OrderBumpsSectionProps) {
         item.id === offer.id ? offer : item,
       ),
     });
-  }
-
-  async function uploadImage(bumpId: string, file: File) {
-    setUploadState("Enviando imagem...");
-    const formData = new FormData();
-    formData.set("flowId", flow.id);
-    formData.set("bumpId", bumpId);
-    formData.set("file", file);
-
-    const result = await uploadFlowOrderBumpImageAction(formData);
-
-    if (!result.ok || !("image" in result) || !result.image) {
-      setUploadState(result.message);
-      return;
-    }
-
-    setOrderBumps({
-      global:
-        bumpId === "global"
-          ? { ...orderBumps.global, image: result.image }
-          : orderBumps.global,
-      individual: orderBumps.individual.map((offer) =>
-        offer.id === bumpId ? { ...offer, image: result.image } : offer,
-      ),
-    });
-    setUploadState("Imagem pronta para salvar.");
   }
 
   return (
@@ -121,26 +99,26 @@ export function OrderBumpsSection({ flow }: OrderBumpsSectionProps) {
         <div className="mt-6 grid gap-4">
           <OrderBumpOfferCard
             bumpId="global"
-            deliveries={deliveries}
+            destinations={flow.telegramDeliveryDestinations}
+            flowId={flow.id}
             offer={orderBumps.global}
             title="Order Bump Global"
             onChange={(global) =>
               setOrderBumps({ ...orderBumps, global })
             }
-            onImageUpload={(file) => uploadImage("global", file)}
           />
 
           {orderBumps.individual.map((offer) => (
             <OrderBumpOfferCard
               key={offer.id}
               bumpId={offer.id}
-              deliveries={deliveries}
+              destinations={flow.telegramDeliveryDestinations}
+              flowId={flow.id}
               offer={offer}
               planId={offer.planId}
               plans={plans}
               title="Order Bump Individual"
               onChange={(nextOffer) => updateIndividual({ ...offer, ...nextOffer })}
-              onImageUpload={(file) => uploadImage(offer.id, file)}
               onPlanChange={(planId) => updateIndividual({ ...offer, planId })}
               onRemove={() =>
                 setOrderBumps({
@@ -155,7 +133,7 @@ export function OrderBumpsSection({ flow }: OrderBumpsSectionProps) {
         </div>
 
         <div className="mt-5 border-t border-white/10 pt-4 text-xs text-muted-foreground">
-          {uploadState || "Edite os order bumps e use Salvar tudo para persistir."}
+          Edite os order bumps e use Salvar tudo para persistir.
         </div>
       </div>
     </div>

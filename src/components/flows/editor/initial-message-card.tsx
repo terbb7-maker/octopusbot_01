@@ -68,7 +68,11 @@ export function InitialMessageCard({
       </div>
 
       <div className="mt-6 grid gap-8">
-        <MediaUploader config={config} flowId={flowId} onChange={onChange} />
+        <MediaUploader
+          flowId={flowId}
+          media={config.media}
+          onChange={(media) => onChange({ ...config, media })}
+        />
 
         <RichTextEditor
           editorRef={editorRef}
