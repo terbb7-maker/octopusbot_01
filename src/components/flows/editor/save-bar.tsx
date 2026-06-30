@@ -27,7 +27,7 @@ export function SaveBar() {
 
   async function handleSave() {
     const result = await saveAll();
-    setToast(result.ok ? "Fluxo salvo com sucesso." : "Erro ao salvar fluxo.");
+    setToast(result.message);
   }
 
   return (

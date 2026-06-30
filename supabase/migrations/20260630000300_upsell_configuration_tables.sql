@@ -1,16 +1,3 @@
-create type public.flow_offer_delay_unit as enum ('seconds', 'minutes');
-create type public.flow_offer_button_color as enum (
-  'auto',
-  'blue',
-  'green',
-  'red'
-);
-create type public.flow_offer_order_bump_mode as enum (
-  'none',
-  'global',
-  'exclusive'
-);
-
 create table public.flow_upsell_sequences (
   id uuid primary key default gen_random_uuid(),
   workspace_id uuid not null,
@@ -18,16 +5,16 @@ create table public.flow_upsell_sequences (
   sequence_key text not null,
   order_index integer not null default 0,
   delay_value numeric not null default 0,
-  delay_unit public.flow_offer_delay_unit not null default 'minutes',
+  delay_unit text not null default 'minutes',
   message text not null default '',
   required boolean not null default false,
   accept_button_text text not null default '✅ Quero aproveitar',
-  accept_button_color public.flow_offer_button_color not null default 'auto',
+  accept_button_color text not null default 'auto',
   decline_button_text text,
-  decline_button_color public.flow_offer_button_color not null default 'auto',
+  decline_button_color text not null default 'auto',
   media_type text,
   media_group boolean not null default false,
-  order_bump_mode public.flow_offer_order_bump_mode not null default 'none',
+  order_bump_mode text not null default 'none',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
 
@@ -36,7 +23,15 @@ create table public.flow_upsell_sequences (
     references public.flows (id, workspace_id)
     on delete cascade,
   constraint flow_upsell_sequences_key_unique
-    unique (flow_id, sequence_key)
+    unique (flow_id, sequence_key),
+  constraint flow_upsell_sequences_delay_unit_check
+    check (delay_unit in ('seconds', 'minutes')),
+  constraint flow_upsell_sequences_accept_color_check
+    check (accept_button_color in ('auto', 'blue', 'green', 'red')),
+  constraint flow_upsell_sequences_decline_color_check
+    check (decline_button_color in ('auto', 'blue', 'green', 'red')),
+  constraint flow_upsell_sequences_order_bump_mode_check
+    check (order_bump_mode in ('none', 'global', 'exclusive'))
 );
 
 create table public.flow_upsell_sequence_plans (

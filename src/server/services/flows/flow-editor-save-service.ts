@@ -63,6 +63,28 @@ function mediaItems(media: FlowEditorMedia | undefined) {
       : [];
 }
 
+function logUpsellSyncError(stage: string, error: unknown) {
+  if (!error || typeof error !== "object") {
+    console.error("[flows] upsell sync failed", { error, stage });
+    return;
+  }
+
+  const record = error as {
+    code?: string;
+    details?: string;
+    hint?: string;
+    message?: string;
+  };
+
+  console.error("[flows] upsell sync failed", {
+    code: record.code,
+    details: record.details,
+    hint: record.hint,
+    message: record.message,
+    stage,
+  });
+}
+
 async function syncNormalizedUpsellData({
   flowId,
   sequences,
@@ -80,7 +102,10 @@ async function syncNormalizedUpsellData({
     .eq("workspace_id", workspaceId)
     .eq("flow_id", flowId);
 
-  if (deleteError) return { ok: false, message: "Erro ao sincronizar upsells." };
+  if (deleteError) {
+    logUpsellSyncError("delete_sequences", deleteError);
+    return { ok: false, message: "Erro ao sincronizar upsells." };
+  }
   if (!sequences.length) return { ok: true, message: "Upsells sincronizados." };
 
   const { data: sequenceRows, error: sequenceError } = await supabase
@@ -109,7 +134,10 @@ async function syncNormalizedUpsellData({
     )
     .select("id,sequence_key");
 
-  if (sequenceError) return { ok: false, message: "Erro ao salvar upsells." };
+  if (sequenceError) {
+    logUpsellSyncError("insert_sequences", sequenceError);
+    return { ok: false, message: "Erro ao salvar upsells." };
+  }
 
   const sequenceIds = new Map(
     (sequenceRows ?? []).map((row) => [row.sequence_key, row.id]),
@@ -157,6 +185,8 @@ async function syncNormalizedUpsellData({
   ]);
 
   if (planResult.error || mediaResult.error) {
+    if (planResult.error) logUpsellSyncError("insert_sequence_plans", planResult.error);
+    if (mediaResult.error) logUpsellSyncError("insert_sequence_media", mediaResult.error);
     return { ok: false, message: "Erro ao salvar detalhes dos upsells." };
   }
 
@@ -207,15 +237,6 @@ export async function saveBasicFlowEditorData(
 
   if (!planResult.ok) return planResult;
 
-  const upsellResult = await syncNormalizedUpsellData({
-    flowId,
-    sequences: input.upsells,
-    supabase,
-    workspaceId,
-  });
-
-  if (!upsellResult.ok) return upsellResult;
-
   const now = new Date().toISOString();
   const cta = input.initialConfig.cta;
   const globalOrderBump = input.orderBumps.global;
@@ -262,6 +283,20 @@ export async function saveBasicFlowEditorData(
 
   if (error) {
     return { ok: false, message: "Erro ao salvar fluxo." };
+  }
+
+  const upsellResult = await syncNormalizedUpsellData({
+    flowId,
+    sequences: input.upsells,
+    supabase,
+    workspaceId,
+  });
+
+  if (!upsellResult.ok) {
+    console.error("[flows] flow saved but upsell normalized sync failed", {
+      flowId,
+      message: upsellResult.message,
+    });
   }
 
   return { ok: true, message: "Fluxo salvo com sucesso." };

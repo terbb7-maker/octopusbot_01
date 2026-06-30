@@ -80,9 +80,6 @@ export type Database = {
       flow_binding_status: "active" | "paused" | "archived";
       flow_deployment_status: "active" | "paused" | "retired";
       flow_deployment_strategy: "single" | "ab_test" | "rollout";
-      flow_offer_delay_unit: "seconds" | "minutes";
-      flow_offer_button_color: "auto" | "blue" | "green" | "red";
-      flow_offer_order_bump_mode: "none" | "global" | "exclusive";
       payment_environment: "production" | "sandbox";
       payment_gateway_provider:
         | "sandbox"
