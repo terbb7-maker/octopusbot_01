@@ -7,10 +7,22 @@ alter table if exists public.flow_upsell_sequences
 drop type if exists public.flow_offer_delivery_type;
 
 alter table if exists public.flow_upsell_sequences
+  alter column delay_unit drop default,
+  alter column accept_button_color drop default,
+  alter column decline_button_color drop default,
+  alter column order_bump_mode drop default;
+
+alter table if exists public.flow_upsell_sequences
   alter column delay_unit type text using delay_unit::text,
   alter column accept_button_color type text using accept_button_color::text,
   alter column decline_button_color type text using decline_button_color::text,
   alter column order_bump_mode type text using order_bump_mode::text;
+
+alter table if exists public.flow_upsell_sequences
+  alter column delay_unit set default 'minutes',
+  alter column accept_button_color set default 'auto',
+  alter column decline_button_color set default 'auto',
+  alter column order_bump_mode set default 'none';
 
 alter table if exists public.flow_upsell_sequences
   drop constraint if exists flow_upsell_sequences_delay_unit_check,
